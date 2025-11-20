@@ -15,6 +15,7 @@ import { generateRound1, generateRound2, generateRound3, createGameRound } from 
 import Header from '@/components/Header';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import PlayerCard from '@/components/PlayerCard';
+import QRCodeDisplay from '@/components/QRCodeDisplay';
 import { Game, GameStatus, GameRound } from '@/types/game';
 import { Play, Users, ArrowRight, Trophy } from 'lucide-react';
 import { Suspense } from 'react';
@@ -99,6 +100,13 @@ function AdminDashboardContent() {
     }
   };
 
+  const getQRCodeUrl = () => {
+    if (typeof window !== 'undefined' && pin) {
+      return `${window.location.origin}/player?pin=${pin}`;
+    }
+    return '';
+  };
+
   // Subscribe to game when PIN is set
   useEffect(() => {
     if (!pin || !isAdmin) return;
@@ -164,18 +172,23 @@ function AdminDashboardContent() {
         </div>
 
         {pin && (
-          <div className="mb-6 p-4 bg-white rounded-xl shadow-md">
-            <p className="text-sm text-gray-600 mb-1">
-              {language === 'en' ? 'Game PIN' : language === 'he' ? 'PIN של המשחק' : 'رمز اللعبة'}
-            </p>
-            <p className="text-2xl font-mono font-bold text-primary-600">{pin}</p>
-            <p className="text-xs text-gray-500 mt-2">
-              {language === 'en' 
-                ? 'Share this PIN with players to join' 
-                : language === 'he' 
-                ? 'שתף את ה-PIN הזה עם שחקנים להצטרפות' 
-                : 'شارك رمز PIN هذا مع اللاعبين للانضمام'}
-            </p>
+          <div className="mb-6 grid md:grid-cols-2 gap-6">
+            <div className="p-6 bg-white dark:bg-dark-bg-secondary rounded-xl shadow-md border-2 border-gray-200 dark:border-dark-border">
+              <p className="text-sm text-gray-600 dark:text-dark-text-secondary mb-1">
+                {language === 'en' ? 'Game PIN' : language === 'he' ? 'PIN של המשחק' : 'رمز اللعبة'}
+              </p>
+              <p className="text-2xl font-mono font-bold text-primary-600 dark:text-primary-400">{pin}</p>
+              <p className="text-xs text-gray-500 dark:text-dark-text-tertiary mt-2">
+                {language === 'en' 
+                  ? 'Share this PIN with players to join' 
+                  : language === 'he' 
+                  ? 'שתף את ה-PIN הזה עם שחקנים להצטרפות' 
+                  : 'شارك رمز PIN هذا مع اللاعبين للانضمام'}
+              </p>
+            </div>
+            <div className="flex items-center justify-center">
+              <QRCodeDisplay value={getQRCodeUrl()} size={150} />
+            </div>
           </div>
         )}
 

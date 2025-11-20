@@ -47,7 +47,7 @@ export default function Timer({ startTime, duration, onComplete }: TimerProps) {
             fill="none"
             stroke="currentColor"
             strokeWidth="4"
-            className="text-gray-200"
+            className="text-white/20"
           />
           <circle
             cx="32"
@@ -58,14 +58,14 @@ export default function Timer({ startTime, duration, onComplete }: TimerProps) {
             strokeWidth="4"
             strokeDasharray={`${2 * Math.PI * 28}`}
             strokeDashoffset={`${2 * Math.PI * 28 * (1 - progress / 100)}`}
-            className={progress > 50 ? 'text-success-500' : progress > 25 ? 'text-warning-500' : 'text-danger-500'}
+            className={progress > 50 ? 'text-green-400' : progress > 25 ? 'text-yellow-400' : 'text-red-400'}
           />
         </svg>
         <div className="absolute inset-0 flex items-center justify-center">
-          <Clock className={`w-6 h-6 ${progress > 50 ? 'text-success-600 dark:text-success-400' : progress > 25 ? 'text-warning-600 dark:text-warning-400' : 'text-danger-600 dark:text-danger-400'}`} />
+          <Clock className={`w-6 h-6 ${progress > 50 ? 'text-green-400' : progress > 25 ? 'text-yellow-400' : 'text-red-400'}`} />
         </div>
       </div>
-      <div className="text-3xl font-bold text-gray-800 dark:text-dark-text-primary">
+      <div className="text-3xl font-bold text-white">
         {String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
       </div>
     </div>

@@ -4,6 +4,7 @@ import React, { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { signInAnonymously } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
+import { useAuth } from '@/lib/auth';
 import {
   subscribeToGame,
   subscribeToGameByPin,
@@ -16,23 +17,30 @@ import { updateDoc, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useLocalization } from '@/lib/localization';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
-import SentenceCard from '@/components/SentenceCard';
-import Timer from '@/components/Timer';
-import { Game, Player, Sentence } from '@/types/game';
-import { useMotionValue, useTransform, motion } from 'framer-motion';
-import { SkipForward, CheckCircle } from 'lucide-react';
+import PlayerRoundDisplay from '@/components/PlayerRoundDisplay';
+import { Game, Player } from '@/types/game';
+import { motion } from 'framer-motion';
+import { CheckCircle } from 'lucide-react';
 
 function PlayerPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const pin = searchParams.get('pin') || '';
 
+  const { user: authUser, isAdmin } = useAuth();
   const { t, language, isRTL, fontFamily } = useLocalization();
   const [game, setGame] = useState<Game | null>(null);
   const [player, setPlayer] = useState<Player | null>(null);
   const [name, setName] = useState('');
   const [isJoined, setIsJoined] = useState(false);
   const [currentAnswers, setCurrentAnswers] = useState<{ [sentenceId: string]: boolean }>({});
+
+  // Prevent admin from joining as player
+  useEffect(() => {
+    if (authUser && isAdmin && game) {
+      router.push('/admin/dashboard');
+    }
+  }, [authUser, isAdmin, game, router]);
 
   useEffect(() => {
     if (!pin) {
@@ -105,14 +113,21 @@ function PlayerPageContent() {
   };
 
   const handleSkip = async () => {
-    if (!game || !player) return;
+    if (!game || !player || !db) return;
 
     const currentRound = game.currentRound || 1;
     
     // For Round 1, mark player as ready (read-only round)
     if (currentRound === 1) {
-      // Update player status to indicate they've finished reading
-      // The admin will move all players to next round together
+      try {
+        // Update player's round1Ready status
+        const playerRef = doc(db, 'games', game.id);
+        await updateDoc(playerRef, {
+          [`players.${player.id}.round1Ready`]: true,
+        });
+      } catch (error) {
+        console.error('Error marking player as ready:', error);
+      }
       return;
     }
     
@@ -122,6 +137,8 @@ function PlayerPageContent() {
   const currentRound = game?.currentRound ? game.rounds[game.currentRound] : null;
   const allAnswered =
     currentRound &&
+    game &&
+    game.currentRound !== 1 && // Round 1 doesn't need answers
     currentRound.sentences.every((s) => currentAnswers[s.id] !== undefined);
 
   if (!game) {
@@ -176,22 +193,63 @@ function PlayerPageContent() {
   if (game.status === 'lobby') {
     return (
       <div
-        className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-primary-50 via-white to-success-50 dark:from-dark-bg dark:via-dark-bg-secondary dark:to-dark-bg-tertiary"
+        className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden"
         style={{ fontFamily, direction: isRTL ? 'rtl' : 'ltr' }}
       >
-        <div className="absolute top-4 right-4">
+        <div className="fixed inset-0 -z-10">
+          <div className="absolute inset-0 bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900" />
+          <motion.div
+            className="absolute inset-0"
+            animate={{
+              background: [
+                'radial-gradient(circle at 20% 50%, rgba(120,119,198,0.3), transparent 50%)',
+                'radial-gradient(circle at 80% 50%, rgba(120,119,198,0.3), transparent 50%)',
+                'radial-gradient(circle at 20% 50%, rgba(120,119,198,0.3), transparent 50%)',
+              ],
+            }}
+            transition={{ duration: 8, repeat: Infinity }}
+          />
+        </div>
+
+        <div className="absolute top-4 right-4 z-20">
           <LanguageSwitcher />
         </div>
-        <div className="max-w-md w-full text-center">
-          <div className="bg-white dark:bg-dark-bg-secondary rounded-2xl p-8 shadow-xl border-2 border-gray-200 dark:border-dark-border">
-            <CheckCircle className="w-16 h-16 text-success-600 dark:text-success-400 mx-auto mb-4" />
-            <h1 className="text-3xl font-bold text-gray-800 dark:text-dark-text-primary mb-4">
+
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="max-w-md w-full text-center relative z-10"
+        >
+          <motion.div
+            className="absolute inset-0 bg-gradient-to-r from-purple-500 via-pink-500 to-blue-500 rounded-3xl blur-2xl opacity-30"
+            animate={{ scale: [1, 1.1, 1] }}
+            transition={{ duration: 3, repeat: Infinity }}
+          />
+          <div className="relative bg-white/10 backdrop-blur-md rounded-3xl p-8 shadow-2xl border-2 border-white/20">
+            <motion.div
+              initial={{ scale: 0, rotate: -180 }}
+              animate={{ scale: 1, rotate: 0 }}
+              transition={{ type: 'spring', delay: 0.2 }}
+            >
+              <CheckCircle className="w-20 h-20 text-green-400 mx-auto mb-4 drop-shadow-lg" />
+            </motion.div>
+            <h1 className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400 mb-2">
               {language === 'en' ? 'Welcome, ' : language === 'he' ? 'ברוך הבא, ' : 'مرحبًا، '}
               {player?.name}!
             </h1>
-            <p className="text-xl text-gray-600 dark:text-dark-text-secondary">{t('lobby.waiting')}</p>
+            <p className="text-xl text-white/90 font-semibold mb-4">{t('lobby.waiting')}</p>
+            <div className="flex justify-center gap-2 mt-6">
+              {[...Array(3)].map((_, i) => (
+                <motion.div
+                  key={i}
+                  className="w-3 h-3 bg-purple-400 rounded-full"
+                  animate={{ scale: [1, 1.5, 1], opacity: [0.5, 1, 0.5] }}
+                  transition={{ duration: 1.5, repeat: Infinity, delay: i * 0.2 }}
+                />
+              ))}
+            </div>
           </div>
-        </div>
+        </motion.div>
       </div>
     );
   }
@@ -200,27 +258,68 @@ function PlayerPageContent() {
   if (game.status === 'round1' && currentRound && player?.round1Ready) {
     return (
       <div
-        className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-primary-50 via-white to-success-50 dark:from-dark-bg dark:via-dark-bg-secondary dark:to-dark-bg-tertiary"
+        className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden"
         style={{ fontFamily, direction: isRTL ? 'rtl' : 'ltr' }}
       >
-        <div className="absolute top-4 right-4">
+        <div className="fixed inset-0 -z-10">
+          <div className="absolute inset-0 bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900" />
+          <motion.div
+            className="absolute inset-0"
+            animate={{
+              background: [
+                'radial-gradient(circle at 20% 50%, rgba(120,119,198,0.3), transparent 50%)',
+                'radial-gradient(circle at 80% 50%, rgba(120,119,198,0.3), transparent 50%)',
+                'radial-gradient(circle at 20% 50%, rgba(120,119,198,0.3), transparent 50%)',
+              ],
+            }}
+            transition={{ duration: 8, repeat: Infinity }}
+          />
+        </div>
+
+        <div className="absolute top-4 right-4 z-20">
           <LanguageSwitcher />
         </div>
-        <div className="max-w-md w-full text-center">
-          <div className="bg-white dark:bg-dark-bg-secondary rounded-2xl p-8 shadow-xl border-2 border-gray-200 dark:border-dark-border">
-            <CheckCircle className="w-16 h-16 text-primary-600 dark:text-primary-400 mx-auto mb-4" />
-            <h1 className="text-3xl font-bold text-gray-800 dark:text-dark-text-primary mb-4">
+
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="max-w-md w-full text-center relative z-10"
+        >
+          <motion.div
+            className="absolute inset-0 bg-gradient-to-r from-green-500 via-blue-500 to-purple-500 rounded-3xl blur-2xl opacity-30"
+            animate={{ scale: [1, 1.1, 1] }}
+            transition={{ duration: 3, repeat: Infinity }}
+          />
+          <div className="relative bg-white/10 backdrop-blur-md rounded-3xl p-8 shadow-2xl border-2 border-white/20">
+            <motion.div
+              initial={{ scale: 0, rotate: -180 }}
+              animate={{ scale: 1, rotate: 0 }}
+              transition={{ type: 'spring' }}
+            >
+              <CheckCircle className="w-20 h-20 text-green-400 mx-auto mb-4 drop-shadow-lg" />
+            </motion.div>
+            <h1 className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-green-400 via-blue-400 to-purple-400 mb-4">
               {language === 'en' ? 'Reading Complete!' : language === 'he' ? 'סיום קריאה!' : 'اكتمل القراءة!'}
             </h1>
-            <p className="text-xl text-gray-600 dark:text-dark-text-secondary">
+            <p className="text-xl text-white/90 font-semibold mb-6">
               {language === 'en' 
                 ? 'Waiting for other players to finish...' 
                 : language === 'he' 
                 ? 'ממתין לשחקנים אחרים לסיים...' 
                 : 'في انتظار انتهاء اللاعبين الآخرين...'}
             </p>
+            <div className="flex justify-center gap-2">
+              {[...Array(3)].map((_, i) => (
+                <motion.div
+                  key={i}
+                  className="w-3 h-3 bg-blue-400 rounded-full"
+                  animate={{ scale: [1, 1.5, 1], opacity: [0.5, 1, 0.5] }}
+                  transition={{ duration: 1.5, repeat: Infinity, delay: i * 0.2 }}
+                />
+              ))}
+            </div>
           </div>
-        </div>
+        </motion.div>
       </div>
     );
   }
@@ -244,71 +343,14 @@ function PlayerPageContent() {
   }
 
   return (
-    <div
-      className="min-h-screen p-4 bg-gradient-to-br from-primary-50 via-white to-success-50 dark:from-dark-bg dark:via-dark-bg-secondary dark:to-dark-bg-tertiary transition-colors"
-      style={{ fontFamily, direction: isRTL ? 'rtl' : 'ltr' }}
-    >
-      <div className="absolute top-4 right-4">
-        <LanguageSwitcher />
-      </div>
-
-      <div className="max-w-4xl mx-auto pt-16">
-        <div className="text-center mb-6">
-          <h1 className="text-3xl font-bold text-gray-800 dark:text-dark-text-primary mb-4">
-            {language === 'en' ? 'Round ' : language === 'he' ? 'סיבוב ' : 'الجولة '}
-            {game.currentRound}
-            {game.currentRound === 1 && (
-              <span className="ml-3 text-lg font-normal text-gray-600 dark:text-dark-text-secondary">
-                ({language === 'en' ? 'Read Only' : language === 'he' ? 'קריאה בלבד' : 'للقراءة فقط'})
-              </span>
-            )}
-          </h1>
-          {game.currentRound !== 1 && (
-            <Timer
-              startTime={currentRound.startTime}
-              duration={currentRound.duration}
-              onComplete={handleSkip}
-            />
-          )}
-        </div>
-
-        <div className="grid gap-4 mb-6">
-          {currentRound.sentences.map((sentence) => (
-            <motion.div
-              key={sentence.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3 }}
-            >
-              <SentenceCard
-                sentence={sentence}
-                onAnswer={(isFake) => handleAnswer(sentence.id, isFake)}
-                selectedAnswer={currentAnswers[sentence.id] !== undefined ? currentAnswers[sentence.id] : null}
-                disabled={currentAnswers[sentence.id] !== undefined}
-                readOnly={game.currentRound === 1}
-              />
-            </motion.div>
-          ))}
-        </div>
-
-        {(game.currentRound === 1 || allAnswered) && (
-          <div className="text-center">
-            <button
-              onClick={handleSkip}
-              disabled={game.currentRound === 1 && player?.round1Ready}
-              className="flex items-center justify-center gap-2 mx-auto px-6 py-3 bg-primary-600 dark:bg-primary-500 text-white rounded-lg font-semibold hover:bg-primary-700 dark:hover:bg-primary-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
-            >
-              <SkipForward className="w-5 h-5" />
-              <span>
-                {game.currentRound === 1
-                  ? (language === 'en' ? 'Finished Reading' : language === 'he' ? 'סיימתי לקרוא' : 'انتهيت من القراءة')
-                  : t('round.skip')}
-              </span>
-            </button>
-          </div>
-        )}
-      </div>
-    </div>
+    <PlayerRoundDisplay
+      game={game}
+      currentRound={currentRound}
+      currentAnswers={currentAnswers}
+      onAnswer={handleAnswer}
+      onSkip={handleSkip}
+      playerReady={player?.round1Ready}
+    />
   );
 }
 
