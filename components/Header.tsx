@@ -7,8 +7,9 @@ import { useLocalization } from '@/lib/localization';
 import { useTheme } from '@/lib/theme';
 import LanguageSwitcher from './LanguageSwitcher';
 import ThemeToggle from './ThemeToggle';
-import { LogIn, LogOut, Shield, LayoutDashboard } from 'lucide-react';
+import { LogIn, LogOut, LayoutDashboard } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 export default function Header() {
   const router = useRouter();
@@ -29,7 +30,14 @@ export default function Header() {
         <div className={`flex items-center justify-between ${isRTL ? 'flex-row-reverse' : ''}`}>
           <div className="flex items-center gap-4">
             <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-              <Shield className="w-6 h-6 text-primary-600 dark:text-primary-400" />
+              <Image
+                src="/logo.png"
+                alt="Fake News Logo"
+                width={32}
+                height={32}
+                className="w-8 h-8 object-contain"
+                priority
+              />
               <span className="text-xl font-bold text-gray-800 dark:text-dark-text-primary">{t('app.title')}</span>
             </Link>
           </div>
