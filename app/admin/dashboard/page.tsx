@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useLocalization } from '@/lib/localization';
 import { useAuth } from '@/lib/auth';
 import {
@@ -21,6 +21,7 @@ import { Play, Users, ArrowRight, Trophy } from 'lucide-react';
 import { Suspense } from 'react';
 
 function AdminDashboardContent() {
+  const searchParams = useSearchParams();
   const router = useRouter();
   const { user, isAdmin, loading: authLoading } = useAuth();
   const { t, language, isRTL, fontFamily } = useLocalization();
@@ -28,6 +29,18 @@ function AdminDashboardContent() {
   const [currentRound, setCurrentRound] = useState<GameRound | null>(null);
   const [pin, setPin] = useState('');
   const [gameId, setGameId] = useState('');
+
+  // Read PIN and gameId from URL parameters
+  useEffect(() => {
+    const urlPin = searchParams.get('pin') || '';
+    const urlGameId = searchParams.get('gameId') || '';
+    if (urlPin) {
+      setPin(urlPin);
+    }
+    if (urlGameId) {
+      setGameId(urlGameId);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (authLoading) return;
@@ -94,7 +107,8 @@ function AdminDashboardContent() {
       const createdGameId = await createGame(user.uid, newPin);
       setPin(newPin);
       setGameId(createdGameId);
-      router.push(`/admin?gameId=${createdGameId}&pin=${newPin}`);
+      // Update URL without navigation to preserve state
+      router.push(`/admin/dashboard?gameId=${createdGameId}&pin=${newPin}`);
     } catch (error) {
       console.error('Error creating game:', error);
     }
@@ -106,6 +120,9 @@ function AdminDashboardContent() {
     }
     return '';
   };
+
+  // Memoize QR code URL to prevent unnecessary re-renders
+  const qrCodeUrl = getQRCodeUrl();
 
   // Subscribe to game when PIN is set
   useEffect(() => {
@@ -187,7 +204,7 @@ function AdminDashboardContent() {
               </p>
             </div>
             <div className="flex items-center justify-center">
-              <QRCodeDisplay value={getQRCodeUrl()} size={150} />
+              {qrCodeUrl && <QRCodeDisplay value={qrCodeUrl} size={150} />}
             </div>
           </div>
         )}
