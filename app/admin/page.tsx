@@ -3,6 +3,8 @@
 import React, { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useLocalization } from '@/lib/localization';
+import { useAuth } from '@/lib/auth';
+import Header from '@/components/Header';
 import {
   subscribeToGame,
   updateGameStatus,
@@ -10,7 +12,6 @@ import {
   calculateAndUpdatePlayerScore,
 } from '@/lib/firestore';
 import { generateRound1, generateRound2, generateRound3, createGameRound } from '@/lib/gameLogic';
-import LanguageSwitcher from '@/components/LanguageSwitcher';
 import PlayerCard from '@/components/PlayerCard';
 import { Game, GameStatus, GameRound } from '@/types/game';
 import { Play, Users, ArrowRight, Trophy } from 'lucide-react';
@@ -21,7 +22,17 @@ function AdminPageContent() {
   const gameId = searchParams.get('gameId') || '';
   const pin = searchParams.get('pin') || '';
 
+  const { user, isAdmin, loading: authLoading } = useAuth();
   const { t, language, isRTL, fontFamily } = useLocalization();
+
+  useEffect(() => {
+    if (authLoading) return;
+    
+    if (!user || !isAdmin) {
+      router.push('/admin/login');
+      return;
+    }
+  }, [user, isAdmin, authLoading, router]);
   const [game, setGame] = useState<Game | null>(null);
   const [currentRound, setCurrentRound] = useState<GameRound | null>(null);
 
@@ -114,16 +125,16 @@ function AdminPageContent() {
 
   return (
     <div
-      className="min-h-screen p-4 bg-gradient-to-br from-primary-50 via-white to-success-50"
+      className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-success-50"
       style={{ fontFamily, direction: isRTL ? 'rtl' : 'ltr' }}
     >
-      <div className="max-w-6xl mx-auto">
+      <Header />
+      <div className="max-w-6xl mx-auto p-4 pt-8">
         <div className="flex justify-between items-center mb-6">
           <div>
             <h1 className="text-3xl font-bold text-gray-800">{t('admin.results')}</h1>
             <p className="text-gray-600">PIN: {pin}</p>
           </div>
-          <LanguageSwitcher />
         </div>
 
         <div className="grid md:grid-cols-3 gap-6">

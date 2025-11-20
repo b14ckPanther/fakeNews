@@ -3,9 +3,10 @@
 import React, { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useLocalization } from '@/lib/localization';
+import { useAuth } from '@/lib/auth';
+import Header from '@/components/Header';
 import { subscribeToGame } from '@/lib/firestore';
 import { Game, PlayerScore, getScoreCategory } from '@/types/game';
-import LanguageSwitcher from '@/components/LanguageSwitcher';
 import { Trophy, Users, Award } from 'lucide-react';
 
 function AdminResultsPageContent() {
@@ -13,8 +14,18 @@ function AdminResultsPageContent() {
   const router = useRouter();
   const gameId = searchParams.get('gameId') || '';
 
+  const { user, isAdmin, loading: authLoading } = useAuth();
   const { t, language, isRTL, fontFamily } = useLocalization();
   const [game, setGame] = useState<Game | null>(null);
+
+  useEffect(() => {
+    if (authLoading) return;
+    
+    if (!user || !isAdmin) {
+      router.push('/admin/login');
+      return;
+    }
+  }, [user, isAdmin, authLoading, router]);
 
   useEffect(() => {
     if (!gameId) {
@@ -31,7 +42,7 @@ function AdminResultsPageContent() {
     return () => unsubscribe();
   }, [gameId, router]);
 
-  if (!game) {
+  if (authLoading) {
     return (
       <div
         className="min-h-screen flex items-center justify-center"
@@ -39,7 +50,28 @@ function AdminResultsPageContent() {
       >
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4" />
-          <p className="text-gray-600">Loading results...</p>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user || !isAdmin) {
+    return null;
+  }
+
+  if (!game) {
+    return (
+      <div
+        className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-success-50"
+        style={{ fontFamily, direction: isRTL ? 'rtl' : 'ltr' }}
+      >
+        <Header />
+        <div className="flex items-center justify-center min-h-[calc(100vh-80px)]">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4" />
+            <p className="text-gray-600">Loading results...</p>
+          </div>
         </div>
       </div>
     );
@@ -79,15 +111,15 @@ function AdminResultsPageContent() {
 
   return (
     <div
-      className="min-h-screen p-4 bg-gradient-to-br from-primary-50 via-white to-success-50"
+      className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-success-50"
       style={{ fontFamily, direction: isRTL ? 'rtl' : 'ltr' }}
     >
-      <div className="max-w-6xl mx-auto">
+      <Header />
+      <div className="max-w-6xl mx-auto p-4 pt-8">
         <div className="flex justify-between items-center mb-6">
           <div>
             <h1 className="text-3xl font-bold text-gray-800">{t('admin.results')}</h1>
           </div>
-          <LanguageSwitcher />
         </div>
 
         <div className="grid md:grid-cols-3 gap-6 mb-6">
