@@ -38,8 +38,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Check if user is admin
         try {
           if (db) {
-            const adminDoc = await getDoc(doc(db, 'admins', firebaseUser.uid));
-            setIsAdmin(adminDoc.exists() && adminDoc.data()?.isAdmin === true);
+            try {
+              const adminDoc = await getDoc(doc(db, 'admins', firebaseUser.uid));
+              setIsAdmin(adminDoc.exists() && adminDoc.data()?.isAdmin === true);
+            } catch (adminError: any) {
+              // If permission denied, user is not admin
+              if (adminError?.code === 'permission-denied') {
+                setIsAdmin(false);
+              } else {
+                console.error('Error checking admin status:', adminError);
+                setIsAdmin(false);
+              }
+            }
           } else {
             setIsAdmin(false);
           }
@@ -65,15 +75,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // Check if user is admin
     if (db) {
-      const adminDoc = await getDoc(doc(db, 'admins', user.uid));
-      const isAdminUser = adminDoc.exists() && adminDoc.data()?.isAdmin === true;
-      
-      if (!isAdminUser) {
+      try {
+        const adminDoc = await getDoc(doc(db, 'admins', user.uid));
+        const isAdminUser = adminDoc.exists() && adminDoc.data()?.isAdmin === true;
+        
+        if (!isAdminUser) {
+          await firebaseSignOut(auth);
+          throw new Error('Access denied. Admin privileges required.');
+        }
+        
+        setIsAdmin(true);
+      } catch (adminError: any) {
         await firebaseSignOut(auth);
-        throw new Error('Access denied. Admin privileges required.');
+        if (adminError?.code === 'permission-denied') {
+          throw new Error('Access denied. Admin privileges required.');
+        }
+        throw new Error('Error verifying admin status. Please check Firestore rules.');
       }
-      
-      setIsAdmin(true);
     } else {
       throw new Error('Firestore not initialized');
     }

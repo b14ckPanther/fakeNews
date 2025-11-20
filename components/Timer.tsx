@@ -62,10 +62,10 @@ export default function Timer({ startTime, duration, onComplete }: TimerProps) {
           />
         </svg>
         <div className="absolute inset-0 flex items-center justify-center">
-          <Clock className={`w-6 h-6 ${progress > 50 ? 'text-success-600' : progress > 25 ? 'text-warning-600' : 'text-danger-600'}`} />
+          <Clock className={`w-6 h-6 ${progress > 50 ? 'text-success-600 dark:text-success-400' : progress > 25 ? 'text-warning-600 dark:text-warning-400' : 'text-danger-600 dark:text-danger-400'}`} />
         </div>
       </div>
-      <div className="text-3xl font-bold text-gray-800">
+      <div className="text-3xl font-bold text-gray-800 dark:text-dark-text-primary">
         {String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
       </div>
     </div>

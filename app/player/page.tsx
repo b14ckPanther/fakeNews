@@ -12,6 +12,8 @@ import {
   updatePlayerAnswer,
   calculateAndUpdatePlayerScore,
 } from '@/lib/firestore';
+import { updateDoc, doc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 import { useLocalization } from '@/lib/localization';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import SentenceCard from '@/components/SentenceCard';
@@ -91,6 +93,12 @@ function PlayerPageContent() {
     if (!game || !player) return;
 
     const currentRound = game.currentRound || 1;
+    
+    // Round 1 is read-only, no answers allowed
+    if (currentRound === 1) {
+      return;
+    }
+    
     setCurrentAnswers((prev) => ({ ...prev, [sentenceId]: isFake }));
 
     await updatePlayerAnswer(game.id, player.id, currentRound, sentenceId, isFake);
@@ -99,8 +107,16 @@ function PlayerPageContent() {
   const handleSkip = async () => {
     if (!game || !player) return;
 
-    // Calculate score for current round and move to results if round 3
-    // Score calculation happens automatically on admin's next round action
+    const currentRound = game.currentRound || 1;
+    
+    // For Round 1, mark player as ready (read-only round)
+    if (currentRound === 1) {
+      // Update player status to indicate they've finished reading
+      // The admin will move all players to next round together
+      return;
+    }
+    
+    // For other rounds, calculate score (handled by admin)
   };
 
   const currentRound = game?.currentRound ? game.rounds[game.currentRound] : null;
@@ -160,20 +176,49 @@ function PlayerPageContent() {
   if (game.status === 'lobby') {
     return (
       <div
-        className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-primary-50 via-white to-success-50"
+        className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-primary-50 via-white to-success-50 dark:from-dark-bg dark:via-dark-bg-secondary dark:to-dark-bg-tertiary"
         style={{ fontFamily, direction: isRTL ? 'rtl' : 'ltr' }}
       >
         <div className="absolute top-4 right-4">
           <LanguageSwitcher />
         </div>
         <div className="max-w-md w-full text-center">
-          <div className="bg-white rounded-2xl p-8 shadow-xl">
-            <CheckCircle className="w-16 h-16 text-success-600 mx-auto mb-4" />
-            <h1 className="text-3xl font-bold text-gray-800 mb-4">
+          <div className="bg-white dark:bg-dark-bg-secondary rounded-2xl p-8 shadow-xl border-2 border-gray-200 dark:border-dark-border">
+            <CheckCircle className="w-16 h-16 text-success-600 dark:text-success-400 mx-auto mb-4" />
+            <h1 className="text-3xl font-bold text-gray-800 dark:text-dark-text-primary mb-4">
               {language === 'en' ? 'Welcome, ' : language === 'he' ? 'ברוך הבא, ' : 'مرحبًا، '}
               {player?.name}!
             </h1>
-            <p className="text-xl text-gray-600">{t('lobby.waiting')}</p>
+            <p className="text-xl text-gray-600 dark:text-dark-text-secondary">{t('lobby.waiting')}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Waiting screen after Round 1 (read-only round)
+  if (game.status === 'round1' && currentRound && player?.round1Ready) {
+    return (
+      <div
+        className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-primary-50 via-white to-success-50 dark:from-dark-bg dark:via-dark-bg-secondary dark:to-dark-bg-tertiary"
+        style={{ fontFamily, direction: isRTL ? 'rtl' : 'ltr' }}
+      >
+        <div className="absolute top-4 right-4">
+          <LanguageSwitcher />
+        </div>
+        <div className="max-w-md w-full text-center">
+          <div className="bg-white dark:bg-dark-bg-secondary rounded-2xl p-8 shadow-xl border-2 border-gray-200 dark:border-dark-border">
+            <CheckCircle className="w-16 h-16 text-primary-600 dark:text-primary-400 mx-auto mb-4" />
+            <h1 className="text-3xl font-bold text-gray-800 dark:text-dark-text-primary mb-4">
+              {language === 'en' ? 'Reading Complete!' : language === 'he' ? 'סיום קריאה!' : 'اكتمل القراءة!'}
+            </h1>
+            <p className="text-xl text-gray-600 dark:text-dark-text-secondary">
+              {language === 'en' 
+                ? 'Waiting for other players to finish...' 
+                : language === 'he' 
+                ? 'ממתין לשחקנים אחרים לסיים...' 
+                : 'في انتظار انتهاء اللاعبين الآخرين...'}
+            </p>
           </div>
         </div>
       </div>
@@ -200,7 +245,7 @@ function PlayerPageContent() {
 
   return (
     <div
-      className="min-h-screen p-4 bg-gradient-to-br from-primary-50 via-white to-success-50"
+      className="min-h-screen p-4 bg-gradient-to-br from-primary-50 via-white to-success-50 dark:from-dark-bg dark:via-dark-bg-secondary dark:to-dark-bg-tertiary transition-colors"
       style={{ fontFamily, direction: isRTL ? 'rtl' : 'ltr' }}
     >
       <div className="absolute top-4 right-4">
@@ -209,15 +254,22 @@ function PlayerPageContent() {
 
       <div className="max-w-4xl mx-auto pt-16">
         <div className="text-center mb-6">
-          <h1 className="text-3xl font-bold text-gray-800 mb-4">
+          <h1 className="text-3xl font-bold text-gray-800 dark:text-dark-text-primary mb-4">
             {language === 'en' ? 'Round ' : language === 'he' ? 'סיבוב ' : 'الجولة '}
             {game.currentRound}
+            {game.currentRound === 1 && (
+              <span className="ml-3 text-lg font-normal text-gray-600 dark:text-dark-text-secondary">
+                ({language === 'en' ? 'Read Only' : language === 'he' ? 'קריאה בלבד' : 'للقراءة فقط'})
+              </span>
+            )}
           </h1>
-          <Timer
-            startTime={currentRound.startTime}
-            duration={currentRound.duration}
-            onComplete={handleSkip}
-          />
+          {game.currentRound !== 1 && (
+            <Timer
+              startTime={currentRound.startTime}
+              duration={currentRound.duration}
+              onComplete={handleSkip}
+            />
+          )}
         </div>
 
         <div className="grid gap-4 mb-6">
@@ -233,19 +285,25 @@ function PlayerPageContent() {
                 onAnswer={(isFake) => handleAnswer(sentence.id, isFake)}
                 selectedAnswer={currentAnswers[sentence.id] !== undefined ? currentAnswers[sentence.id] : null}
                 disabled={currentAnswers[sentence.id] !== undefined}
+                readOnly={game.currentRound === 1}
               />
             </motion.div>
           ))}
         </div>
 
-        {allAnswered && (
+        {(game.currentRound === 1 || allAnswered) && (
           <div className="text-center">
             <button
               onClick={handleSkip}
-              className="flex items-center justify-center gap-2 mx-auto px-6 py-3 bg-primary-600 text-white rounded-lg font-semibold hover:bg-primary-700 transition-colors"
+              disabled={game.currentRound === 1 && player?.round1Ready}
+              className="flex items-center justify-center gap-2 mx-auto px-6 py-3 bg-primary-600 dark:bg-primary-500 text-white rounded-lg font-semibold hover:bg-primary-700 dark:hover:bg-primary-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
             >
               <SkipForward className="w-5 h-5" />
-              <span>{t('round.skip')}</span>
+              <span>
+                {game.currentRound === 1
+                  ? (language === 'en' ? 'Finished Reading' : language === 'he' ? 'סיימתי לקרוא' : 'انتهيت من القراءة')
+                  : t('round.skip')}
+              </span>
             </button>
           </div>
         )}

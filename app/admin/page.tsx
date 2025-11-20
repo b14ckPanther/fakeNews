@@ -11,6 +11,8 @@ import {
   updateGameRound,
   calculateAndUpdatePlayerScore,
 } from '@/lib/firestore';
+import { updateDoc, doc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 import { generateRound1, generateRound2, generateRound3, createGameRound } from '@/lib/gameLogic';
 import PlayerCard from '@/components/PlayerCard';
 import { Game, GameStatus, GameRound } from '@/types/game';
@@ -68,12 +70,24 @@ function AdminPageContent() {
     const currentRoundNum = game.currentRound || 1;
 
     if (currentRoundNum === 1) {
+      // Move all players from Round 1 (read-only) to Round 2
+      // Reset round1Ready status for next time
       const round1Sentences = game.rounds[1]?.sentences || generateRound1();
       const round2Sentences = generateRound2(round1Sentences);
       const round2Data = createGameRound(2, round2Sentences, game.rounds[1]);
 
       await updateGameRound(pin, 2, round2Data);
       await updateGameStatus(pin, 'round2');
+      
+      // Reset round1Ready status for all players
+      const playerUpdates: any = {};
+      Object.keys(game.players).forEach((playerId) => {
+        playerUpdates[`players.${playerId}.round1Ready`] = false;
+      });
+      if (Object.keys(playerUpdates).length > 0 && db) {
+        const gameRef = doc(db, 'games', pin);
+        await updateDoc(gameRef, playerUpdates);
+      }
     } else if (currentRoundNum === 2) {
       // Calculate scores before moving to round 3
       const playerIds = Object.keys(game.players);

@@ -1,0 +1,54 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper function to check if user is admin
+    function isAdmin() {
+      return request.auth != null && 
+             exists(/databases/$(database)/documents/admins/$(request.auth.uid)) &&
+             get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.isAdmin == true;
+    }
+    
+    // Helper function to check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Admins collection - only admins can read, and only system can write (via Admin SDK)
+    match /admins/{userId} {
+      allow read: if isAdmin();
+      // Only allow admins to check their own admin status, or allow reads during auth check
+      allow read: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Games collection - anyone can read by PIN, admins can write
+    match /games/{gameId} {
+      // Allow anyone (players) to read games (needed for joining by PIN)
+      allow read: if true;
+      
+      // Allow admins to create and update games
+      allow create: if isAdmin() && 
+                     request.resource.data.adminId == request.auth.uid;
+      
+      allow update: if isAdmin();
+      
+      // Allow anonymous users (players) to update only player data within the game
+      allow update: if request.auth != null &&
+                     request.resource.data.diff(resource.data).affectedKeys()
+                       .hasOnly(['players']) &&
+                     request.resource.data.players.diff(resource.data.players)
+                       .affectedKeys().hasOnly([request.auth.uid]);
+      
+      // Allow players to update their own answers
+      match /games/{gameId}/players/{playerId} {
+        allow write: if request.auth != null && request.auth.uid == playerId;
+      }
+    }
+    
+    // Default deny all other access
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
+

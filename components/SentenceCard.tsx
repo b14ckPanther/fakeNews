@@ -10,6 +10,7 @@ interface SentenceCardProps {
   onAnswer?: (isFake: boolean) => void;
   selectedAnswer?: boolean | null;
   disabled?: boolean;
+  readOnly?: boolean;
 }
 
 export default function SentenceCard({
@@ -17,6 +18,7 @@ export default function SentenceCard({
   onAnswer,
   selectedAnswer,
   disabled = false,
+  readOnly = false,
 }: SentenceCardProps) {
   const { language, isRTL } = useLocalization();
   const text = sentence.text[language];

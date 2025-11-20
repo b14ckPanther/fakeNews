@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { LocalizationProvider } from '@/lib/localization';
 import { AuthProvider } from '@/lib/auth';
+import { ThemeProvider } from '@/lib/theme';
 
 export const metadata: Metadata = {
   title: 'Fake News Seminar Game',
@@ -24,9 +25,11 @@ export default function RootLayout({
         />
       </head>
       <body>
-        <AuthProvider>
-          <LocalizationProvider>{children}</LocalizationProvider>
-        </AuthProvider>
+        <ThemeProvider>
+          <AuthProvider>
+            <LocalizationProvider>{children}</LocalizationProvider>
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

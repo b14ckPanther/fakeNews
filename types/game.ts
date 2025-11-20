@@ -23,6 +23,7 @@ export interface Player {
     };
   };
   joinedAt: number;
+  round1Ready?: boolean; // For Round 1 read-only tracking
 }
 
 export interface GameRound {

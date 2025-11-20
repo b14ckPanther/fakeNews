@@ -4,7 +4,9 @@ import React from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
 import { useLocalization } from '@/lib/localization';
+import { useTheme } from '@/lib/theme';
 import LanguageSwitcher from './LanguageSwitcher';
+import ThemeToggle from './ThemeToggle';
 import { LogIn, LogOut, Shield } from 'lucide-react';
 import Link from 'next/link';
 
@@ -20,19 +22,20 @@ export default function Header() {
 
   return (
     <header
-      className="w-full bg-white shadow-md border-b-2 border-primary-200 sticky top-0 z-50"
+      className="w-full bg-white dark:bg-dark-bg-secondary shadow-lg border-b-2 border-primary-200 dark:border-dark-border sticky top-0 z-50 backdrop-blur-sm bg-opacity-90 dark:bg-opacity-90"
       style={{ fontFamily, direction: isRTL ? 'rtl' : 'ltr' }}
     >
       <div className="max-w-7xl mx-auto px-4 py-3">
         <div className={`flex items-center justify-between ${isRTL ? 'flex-row-reverse' : ''}`}>
           <div className="flex items-center gap-4">
             <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-              <Shield className="w-6 h-6 text-primary-600" />
-              <span className="text-xl font-bold text-gray-800">{t('app.title')}</span>
+              <Shield className="w-6 h-6 text-primary-600 dark:text-primary-400" />
+              <span className="text-xl font-bold text-gray-800 dark:text-dark-text-primary">{t('app.title')}</span>
             </Link>
           </div>
 
           <div className={`flex items-center gap-4 ${isRTL ? 'flex-row-reverse' : ''}`}>
+            <ThemeToggle />
             <LanguageSwitcher />
             
             {loading ? (
