@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useLocalization } from '@/lib/localization';
 import {
@@ -15,7 +15,7 @@ import PlayerCard from '@/components/PlayerCard';
 import { Game, GameStatus, GameRound } from '@/types/game';
 import { Play, Users, ArrowRight, Trophy } from 'lucide-react';
 
-export default function AdminPage() {
+function AdminPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const gameId = searchParams.get('gameId') || '';
@@ -213,6 +213,21 @@ export default function AdminPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function AdminPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4" />
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    }>
+      <AdminPageContent />
+    </Suspense>
   );
 }
 

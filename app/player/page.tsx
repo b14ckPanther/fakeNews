@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { signInAnonymously } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
@@ -20,7 +20,7 @@ import { Game, Player, Sentence } from '@/types/game';
 import { useMotionValue, useTransform, motion } from 'framer-motion';
 import { SkipForward, CheckCircle } from 'lucide-react';
 
-export default function PlayerPage() {
+function PlayerPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const pin = searchParams.get('pin') || '';
@@ -251,6 +251,21 @@ export default function PlayerPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function PlayerPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4" />
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    }>
+      <PlayerPageContent />
+    </Suspense>
   );
 }
 

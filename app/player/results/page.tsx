@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useLocalization } from '@/lib/localization';
 import { subscribeToGame } from '@/lib/firestore';
@@ -9,7 +9,7 @@ import LanguageSwitcher from '@/components/LanguageSwitcher';
 import { Trophy, Award, Target, User } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-export default function PlayerResultsPage() {
+function PlayerResultsPageContent() {
   const searchParams = useSearchParams();
   const gameId = searchParams.get('gameId') || '';
   const playerId = searchParams.get('playerId') || '';
@@ -171,6 +171,21 @@ export default function PlayerResultsPage() {
         </motion.div>
       </div>
     </div>
+  );
+}
+
+export default function PlayerResultsPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4" />
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    }>
+      <PlayerResultsPageContent />
+    </Suspense>
   );
 }
 

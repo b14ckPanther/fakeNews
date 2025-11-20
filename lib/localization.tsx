@@ -123,21 +123,6 @@ const translations: Record<string, Record<Language, string>> = {
     he: 'צייד שקרים',
     ar: 'صياد الأكاذيب',
   },
-  'category.victim': {
-    en: 'Victim',
-    he: 'קורבן',
-    ar: 'ضحية',
-  },
-  'category.lieInvestigator': {
-    en: 'Lie Investigator',
-    he: 'חוקר שקרים',
-    ar: 'محقق الأكاذيب',
-  },
-  'category.lieHunter': {
-    en: 'Lie Hunter',
-    he: 'צייד שקרים',
-    ar: 'صياد الأكاذيب',
-  },
   'admin.results': {
     en: 'Game Results',
     he: 'תוצאות המשחק',
