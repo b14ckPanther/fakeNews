@@ -73,8 +73,9 @@ function PlayerPageContent() {
             return;
           }
         } else {
-          // Player was removed from game
-          setPlayer(null);
+          // Player was removed from game (kicked)
+          // Keep player state so they can see the kicked message
+          setPlayer({ ...player, kicked: true });
         }
       }
     });

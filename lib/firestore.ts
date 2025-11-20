@@ -9,6 +9,7 @@ import {
   where,
   serverTimestamp,
   Timestamp,
+  deleteField,
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { Game, Player, GameStatus } from '@/types/game';
@@ -180,10 +181,9 @@ export async function kickPlayer(gameId: string, playerId: string) {
   const player = game.players[playerId];
   if (!player) return;
 
-  // Mark player as kicked instead of removing them completely
-  // This allows the player to see the kick message
+  // Remove the player completely from the game
   await updateDoc(gameRef, {
-    [`players.${playerId}.kicked`]: true,
+    [`players.${playerId}`]: deleteField(),
   });
 }
 
