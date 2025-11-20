@@ -4,6 +4,7 @@ import {
   getDoc,
   setDoc,
   updateDoc,
+  deleteDoc,
   onSnapshot,
   query,
   where,
@@ -89,6 +90,53 @@ export async function updateGameStatus(gameId: string, status: GameStatus) {
   if (!db) throw new Error('Firestore not initialized');
   const gameRef = doc(db, 'games', gameId);
   await updateDoc(gameRef, { status });
+}
+
+export async function restartGame(gameId: string) {
+  if (!db) throw new Error('Firestore not initialized');
+  const gameRef = doc(db, 'games', gameId);
+  const gameSnap = await getDoc(gameRef);
+  if (!gameSnap.exists()) return;
+
+  const game = gameSnap.data() as Game;
+  
+  // Reset game to lobby state
+  // Clear rounds, reset player scores and answers, but keep players
+  const resetPlayers: { [key: string]: any } = {};
+  Object.keys(game.players).forEach((playerId) => {
+    resetPlayers[playerId] = {
+      ...game.players[playerId],
+      score: 0,
+      answers: {},
+      round1Ready: false,
+    };
+  });
+
+  await updateDoc(gameRef, {
+    status: 'lobby',
+    currentRound: undefined,
+    rounds: {},
+    players: resetPlayers,
+  });
+}
+
+export async function regeneratePin(oldPin: string, newPin: string) {
+  if (!db) throw new Error('Firestore not initialized');
+  const oldGameRef = doc(db, 'games', oldPin);
+  const gameSnap = await getDoc(oldGameRef);
+  if (!gameSnap.exists()) return;
+
+  const game = gameSnap.data() as Game;
+  
+  // Create new game document with new PIN as document ID
+  const newGameRef = doc(db, 'games', newPin);
+  await setDoc(newGameRef, {
+    ...game,
+    pin: newPin,
+  });
+
+  // Delete old game document
+  await deleteDoc(oldGameRef);
 }
 
 export async function updateGameRound(gameId: string, roundNumber: number, roundData: any) {

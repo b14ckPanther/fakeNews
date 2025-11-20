@@ -31,6 +31,7 @@ service cloud.firestore {
                      request.resource.data.adminId == request.auth.uid;
       
       allow update: if isAdmin();
+      allow delete: if isAdmin();
       
       // Allow anonymous users (players) to update only player data within the game
       allow update: if request.auth != null &&

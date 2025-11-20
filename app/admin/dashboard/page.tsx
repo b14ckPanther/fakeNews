@@ -11,6 +11,8 @@ import {
   calculateAndUpdatePlayerScore,
   createGame,
   kickPlayer,
+  restartGame,
+  regeneratePin,
 } from '@/lib/firestore';
 import { generateRound1, generateRound2, generateRound3, createGameRound } from '@/lib/gameLogic';
 import Header from '@/components/Header';
@@ -18,7 +20,7 @@ import LanguageSwitcher from '@/components/LanguageSwitcher';
 import PlayerCard from '@/components/PlayerCard';
 import QRCodeDisplay from '@/components/QRCodeDisplay';
 import { Game, GameStatus, GameRound } from '@/types/game';
-import { Play, Users, ArrowRight, Trophy } from 'lucide-react';
+import { Play, Users, ArrowRight, Trophy, RotateCcw, QrCode } from 'lucide-react';
 import { Suspense } from 'react';
 import { motion } from 'framer-motion';
 
@@ -99,6 +101,49 @@ function AdminDashboardContent() {
 
   const handleShowResults = async () => {
     router.push(`/admin/results?gameId=${pin}`);
+  };
+
+  const handleRestartGame = async () => {
+    if (!pin || !game) return;
+    
+    if (window.confirm(
+      language === 'en' 
+        ? 'Are you sure you want to restart the game? This will reset all rounds and player scores, but keep players in the game.'
+        : language === 'he'
+        ? 'האם אתה בטוח שברצונך לאתחל את המשחק? זה יאפס את כל הסיבובים והניקודים, אך ישמור על השחקנים במשחק.'
+        : 'هل أنت متأكد أنك تريد إعادة تشغيل اللعبة؟ سيؤدي هذا إلى إعادة تعيين جميع الجولات والنتائج، ولكن سيحتفظ باللاعبين في اللعبة.'
+    )) {
+      await restartGame(pin);
+    }
+  };
+
+  const handleRegeneratePin = async () => {
+    if (!pin || !game) return;
+    
+    if (window.confirm(
+      language === 'en' 
+        ? 'Are you sure you want to regenerate the PIN and QR code? Players will need to rejoin with the new PIN.'
+        : language === 'he'
+        ? 'האם אתה בטוח שברצונך ליצור מחדש את ה-PIN וקוד ה-QR? השחקנים יצטרכו להצטרף מחדש עם ה-PIN החדש.'
+        : 'هل أنت متأكد أنك تريد إعادة إنشاء رمز PIN وكود QR؟ سيحتاج اللاعبون إلى إعادة الانضمام برمز PIN الجديد.'
+    )) {
+      const newPin = Math.floor(100000 + Math.random() * 900000).toString();
+      try {
+        await regeneratePin(pin, newPin);
+        setPin(newPin);
+        setGameId(newPin);
+        router.push(`/admin/dashboard?gameId=${newPin}&pin=${newPin}`);
+      } catch (error) {
+        console.error('Error regenerating PIN:', error);
+        alert(
+          language === 'en' 
+            ? 'Error regenerating PIN. Please try again.'
+            : language === 'he'
+            ? 'שגיאה ביצירת PIN מחדש. אנא נסה שוב.'
+            : 'خطأ في إعادة إنشاء رمز PIN. يرجى المحاولة مرة أخرى.'
+        );
+      }
+    }
   };
 
   const handleCreateGame = async () => {
@@ -403,6 +448,36 @@ function AdminDashboardContent() {
                           </motion.button>
                         )}
                       </>
+                    )}
+
+                    {/* Restart Game Button - Show when game is not in lobby */}
+                    {game.status !== 'lobby' && (
+                      <motion.button
+                        onClick={handleRestartGame}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-gradient-to-r from-orange-600 via-red-600 to-orange-600 text-white rounded-xl font-bold hover:from-orange-500 hover:via-red-500 hover:to-orange-500 transition-all shadow-2xl border-2 border-white/30 mt-3"
+                      >
+                        <RotateCcw className="w-5 h-5" />
+                        <span>
+                          {language === 'en' ? 'Restart Game' : language === 'he' ? 'אתחל משחק' : 'إعادة تشغيل اللعبة'}
+                        </span>
+                      </motion.button>
+                    )}
+
+                    {/* Regenerate QR & Pin Button */}
+                    {pin && (
+                      <motion.button
+                        onClick={handleRegeneratePin}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white rounded-xl font-bold hover:from-indigo-500 hover:via-purple-500 hover:to-pink-500 transition-all shadow-2xl border-2 border-white/30 mt-3"
+                      >
+                        <QrCode className="w-5 h-5" />
+                        <span>
+                          {language === 'en' ? 'Regenerate QR & Pin' : language === 'he' ? 'צור מחדש QR ו-PIN' : 'إعادة إنشاء QR و PIN'}
+                        </span>
+                      </motion.button>
                     )}
                   </div>
                 </div>
