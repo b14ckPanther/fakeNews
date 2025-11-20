@@ -38,7 +38,7 @@ export default function Header() {
                 className="w-8 h-8 object-contain"
                 priority
               />
-              <span className="text-xl font-bold text-gray-800 dark:text-dark-text-primary">{t('app.title')}</span>
+              <span className="text-xl font-bold text-gray-800 dark:text-dark-text-primary">FakeNews</span>
             </Link>
           </div>
 
@@ -71,10 +71,10 @@ export default function Header() {
             ) : (
               <Link
                 href="/admin/login"
-                className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors text-sm font-semibold"
+                className="flex items-center justify-center w-10 h-10 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+                title={language === 'en' ? 'Admin Login' : language === 'he' ? 'כניסת מנהל' : 'تسجيل دخول المدير'}
               >
-                <LogIn className="w-4 h-4" />
-                <span>{language === 'en' ? 'Admin Login' : language === 'he' ? 'כניסת מנהל' : 'تسجيل دخول المدير'}</span>
+                <LogIn className="w-5 h-5" />
               </Link>
             )}
           </div>
