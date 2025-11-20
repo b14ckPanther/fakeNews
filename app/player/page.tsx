@@ -160,32 +160,83 @@ function PlayerPageContent() {
   if (!isJoined) {
     return (
       <div
-        className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-primary-50 via-white to-success-50"
+        className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden"
         style={{ fontFamily, direction: isRTL ? 'rtl' : 'ltr' }}
       >
-        <div className="absolute top-4 right-4">
+        {/* Animated background */}
+        <div className="fixed inset-0 -z-10">
+          <div className="absolute inset-0 bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900" />
+          <motion.div
+            className="absolute inset-0"
+            animate={{
+              background: [
+                'radial-gradient(circle at 20% 50%, rgba(120,119,198,0.3), transparent 50%)',
+                'radial-gradient(circle at 80% 50%, rgba(120,119,198,0.3), transparent 50%)',
+                'radial-gradient(circle at 20% 50%, rgba(120,119,198,0.3), transparent 50%)',
+              ],
+            }}
+            transition={{ duration: 8, repeat: Infinity }}
+          />
+        </div>
+
+        <div className="absolute top-4 right-4 z-20">
           <LanguageSwitcher />
         </div>
-        <div className="max-w-md w-full bg-white rounded-2xl p-8 shadow-xl">
-          <h1 className="text-3xl font-bold text-gray-800 mb-6 text-center">{t('player.enterName')}</h1>
-          <div className="space-y-4">
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder={language === 'en' ? 'Your name' : language === 'he' ? 'השם שלך' : 'اسمك'}
-              className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-primary-500 focus:outline-none text-lg"
-              onKeyPress={(e) => e.key === 'Enter' && handleJoinGame()}
-            />
-            <button
-              onClick={handleJoinGame}
-              disabled={!name.trim()}
-              className="w-full px-6 py-3 bg-primary-600 text-white rounded-lg font-semibold hover:bg-primary-700 transition-colors disabled:opacity-50"
-            >
-              {language === 'en' ? 'Join' : language === 'he' ? 'הצטרף' : 'انضم'}
-            </button>
+
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          className="max-w-md w-full relative z-10"
+        >
+          <motion.div
+            className="absolute inset-0 bg-gradient-to-r from-purple-500 via-pink-500 to-blue-500 rounded-3xl blur-2xl opacity-30"
+            animate={{ scale: [1, 1.1, 1] }}
+            transition={{ duration: 3, repeat: Infinity }}
+          />
+          <div className="relative bg-white/10 backdrop-blur-md rounded-3xl p-8 shadow-2xl border-2 border-white/20">
+            <div className="text-center mb-6">
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: 'spring', delay: 0.2 }}
+                className="w-20 h-20 mx-auto mb-4 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center"
+              >
+                <span className="text-3xl">🎮</span>
+              </motion.div>
+              <h1 className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400 mb-2">
+                {t('player.enterName')}
+              </h1>
+              <p className="text-white/70 text-sm">
+                {language === 'en' ? 'Enter your name to join the game' : language === 'he' ? 'הזן את שמך להצטרף למשחק' : 'أدخل اسمك للانضمام إلى اللعبة'}
+              </p>
+            </div>
+            <div className="space-y-4">
+              <motion.input
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.3 }}
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder={language === 'en' ? 'Your name' : language === 'he' ? 'השם שלך' : 'اسمك'}
+                className="w-full px-6 py-4 bg-white/90 backdrop-blur-sm border-2 border-white/50 rounded-xl focus:border-purple-400 focus:outline-none text-lg text-gray-800 placeholder-gray-500 font-medium shadow-lg"
+                onKeyPress={(e) => e.key === 'Enter' && handleJoinGame()}
+              />
+              <motion.button
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
+                onClick={handleJoinGame}
+                disabled={!name.trim()}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className="w-full px-6 py-4 bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 text-white rounded-xl font-bold text-lg hover:from-purple-500 hover:via-pink-500 hover:to-blue-500 transition-all shadow-2xl border-2 border-white/30 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {language === 'en' ? 'Join Game' : language === 'he' ? 'הצטרף למשחק' : 'انضم إلى اللعبة'}
+              </motion.button>
+            </div>
           </div>
-        </div>
+        </motion.div>
       </div>
     );
   }

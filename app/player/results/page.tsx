@@ -102,7 +102,7 @@ function PlayerResultsPageContent() {
       default:
         return {
           icon: User,
-          gradient: 'from-gray-400 via-gray-500 to-gray-600',
+          gradient: 'from-white via-gray-200 to-gray-300',
           bgGradient: 'from-gray-400/20 via-gray-500/20 to-gray-600/20',
           text: language === 'en' ? 'VICTIM' : language === 'he' ? 'קורבן' : 'ضحية',
           emoji: '😔',
