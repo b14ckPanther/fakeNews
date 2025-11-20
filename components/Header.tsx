@@ -7,7 +7,7 @@ import { useLocalization } from '@/lib/localization';
 import { useTheme } from '@/lib/theme';
 import LanguageSwitcher from './LanguageSwitcher';
 import ThemeToggle from './ThemeToggle';
-import { LogIn, LogOut, Shield } from 'lucide-react';
+import { LogIn, LogOut, Shield, LayoutDashboard } from 'lucide-react';
 import Link from 'next/link';
 
 export default function Header() {
@@ -45,6 +45,13 @@ export default function Header() {
                 <span className="text-sm text-gray-600 hidden md:inline">
                   {language === 'en' ? 'Admin' : language === 'he' ? 'מנהל' : 'مدير'}
                 </span>
+                <Link
+                  href="/admin/dashboard"
+                  className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors text-sm font-semibold"
+                >
+                  <LayoutDashboard className="w-4 h-4" />
+                  <span>{language === 'en' ? 'Dashboard' : language === 'he' ? 'לוח בקרה' : 'لوحة التحكم'}</span>
+                </Link>
                 <button
                   onClick={handleLogout}
                   className="flex items-center gap-2 px-4 py-2 bg-danger-600 text-white rounded-lg hover:bg-danger-700 transition-colors text-sm font-semibold"
