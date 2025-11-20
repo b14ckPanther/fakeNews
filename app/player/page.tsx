@@ -65,7 +65,16 @@ function PlayerPageContent() {
       if (gameData) {
         setGame(gameData);
         if (gameData.players[player.id]) {
-          setPlayer(gameData.players[player.id]);
+          const updatedPlayer = gameData.players[player.id];
+          setPlayer(updatedPlayer);
+          // Check if player was kicked
+          if (updatedPlayer.kicked) {
+            // Player was kicked, show message and redirect
+            return;
+          }
+        } else {
+          // Player was removed from game
+          setPlayer(null);
         }
       }
     });
@@ -153,6 +162,60 @@ function PlayerPageContent() {
             {language === 'en' ? 'Loading game...' : language === 'he' ? 'טוען משחק...' : 'جارٍ تحميل اللعبة...'}
           </p>
         </div>
+      </div>
+    );
+  }
+
+  // Check if player was kicked
+  if (player?.kicked) {
+    return (
+      <div
+        className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden"
+        style={{ fontFamily, direction: isRTL ? 'rtl' : 'ltr' }}
+      >
+        <div className="fixed inset-0 -z-10">
+          <div className="absolute inset-0 bg-gradient-to-br from-red-900 via-orange-900 to-red-800" />
+        </div>
+
+        <div className="absolute top-4 right-4 z-20">
+          <LanguageSwitcher />
+        </div>
+
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="max-w-md w-full relative z-10"
+        >
+          <div className="relative bg-white/10 backdrop-blur-md rounded-3xl p-8 shadow-2xl border-2 border-red-400/30">
+            <motion.div
+              initial={{ scale: 0, rotate: -180 }}
+              animate={{ scale: 1, rotate: 0 }}
+              transition={{ type: 'spring' }}
+            >
+              <div className="w-20 h-20 mx-auto mb-4 bg-red-500/30 rounded-full flex items-center justify-center border-2 border-red-400">
+                <span className="text-4xl">🚫</span>
+              </div>
+            </motion.div>
+            <h1 className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-red-400 via-orange-400 to-red-500 mb-4">
+              {language === 'en' ? 'You have been removed' : language === 'he' ? 'הוסרת מהמשחק' : 'تم إزالتك من اللعبة'}
+            </h1>
+            <p className="text-xl text-white/90 font-semibold mb-6">
+              {language === 'en' 
+                ? 'The admin has removed you from the game.' 
+                : language === 'he'
+                ? 'המנהל הסיר אותך מהמשחק.'
+                : 'قام المدير بإزالتك من اللعبة.'}
+            </p>
+            <motion.button
+              onClick={() => router.push('/')}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="w-full px-6 py-4 bg-gradient-to-r from-red-600 via-orange-600 to-red-600 text-white rounded-xl font-bold hover:from-red-500 hover:via-orange-500 hover:to-red-500 transition-all shadow-2xl border-2 border-white/30"
+            >
+              {language === 'en' ? 'Return to Home' : language === 'he' ? 'חזרה לדף הבית' : 'العودة إلى الصفحة الرئيسية'}
+            </motion.button>
+          </div>
+        </motion.div>
       </div>
     );
   }

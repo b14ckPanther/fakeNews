@@ -24,6 +24,7 @@ export interface Player {
   };
   joinedAt: number;
   round1Ready?: boolean; // For Round 1 read-only tracking
+  kicked?: boolean; // True if player was kicked by admin
 }
 
 export interface GameRound {

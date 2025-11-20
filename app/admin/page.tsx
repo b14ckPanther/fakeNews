@@ -10,6 +10,7 @@ import {
   updateGameStatus,
   updateGameRound,
   calculateAndUpdatePlayerScore,
+  kickPlayer,
 } from '@/lib/firestore';
 import { updateDoc, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -173,6 +174,18 @@ function AdminPageContent() {
                       key={player.id}
                       name={player.name}
                       score={player.score || 0}
+                      showKickButton={true}
+                      onKick={async () => {
+                        if (pin && window.confirm(
+                          language === 'en' 
+                            ? `Are you sure you want to kick ${player.name}?`
+                            : language === 'he'
+                            ? `האם אתה בטוח שברצונך להסיר את ${player.name}?`
+                            : `هل أنت متأكد أنك تريد طرد ${player.name}؟`
+                        )) {
+                          await kickPlayer(pin, player.id);
+                        }
+                      }}
                     />
                   ))
                 )}

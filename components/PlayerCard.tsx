@@ -1,16 +1,18 @@
 'use client';
 
 import React from 'react';
-import { User } from 'lucide-react';
+import { User, X } from 'lucide-react';
 
 interface PlayerCardProps {
   name: string;
   score?: number;
   isCurrentPlayer?: boolean;
   isReady?: boolean;
+  showKickButton?: boolean;
+  onKick?: () => void;
 }
 
-export default function PlayerCard({ name, score, isCurrentPlayer, isReady }: PlayerCardProps) {
+export default function PlayerCard({ name, score, isCurrentPlayer, isReady, showKickButton, onKick }: PlayerCardProps) {
   return (
     <div
       className={`flex items-center gap-3 p-4 rounded-xl bg-white/10 backdrop-blur-md shadow-lg border-2 transition-all ${
@@ -48,6 +50,15 @@ export default function PlayerCard({ name, score, isCurrentPlayer, isReady }: Pl
           )}
         </div>
       </div>
+      {showKickButton && onKick && (
+        <button
+          onClick={onKick}
+          className="flex items-center justify-center w-8 h-8 rounded-lg bg-red-500/20 hover:bg-red-500/30 border-2 border-red-400/50 text-red-400 hover:text-red-300 transition-colors"
+          title="Kick player"
+        >
+          <X className="w-4 h-4" />
+        </button>
+      )}
     </div>
   );
 }

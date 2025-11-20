@@ -170,3 +170,20 @@ export async function calculateAndUpdatePlayerScore(gameId: string, playerId: st
   });
 }
 
+export async function kickPlayer(gameId: string, playerId: string) {
+  if (!db) throw new Error('Firestore not initialized');
+  const gameRef = doc(db, 'games', gameId);
+  const gameSnap = await getDoc(gameRef);
+  if (!gameSnap.exists()) return;
+
+  const game = gameSnap.data() as Game;
+  const player = game.players[playerId];
+  if (!player) return;
+
+  // Mark player as kicked instead of removing them completely
+  // This allows the player to see the kick message
+  await updateDoc(gameRef, {
+    [`players.${playerId}.kicked`]: true,
+  });
+}
+

@@ -10,6 +10,7 @@ import {
   updateGameRound,
   calculateAndUpdatePlayerScore,
   createGame,
+  kickPlayer,
 } from '@/lib/firestore';
 import { generateRound1, generateRound2, generateRound3, createGameRound } from '@/lib/gameLogic';
 import Header from '@/components/Header';
@@ -296,6 +297,18 @@ function AdminDashboardContent() {
                           <PlayerCard
                             name={player.name}
                             score={player.score || 0}
+                            showKickButton={true}
+                            onKick={async () => {
+                              if (pin && window.confirm(
+                                language === 'en' 
+                                  ? `Are you sure you want to kick ${player.name}?`
+                                  : language === 'he'
+                                  ? `האם אתה בטוח שברצונך להסיר את ${player.name}?`
+                                  : `هل أنت متأكد أنك تريد طرد ${player.name}؟`
+                              )) {
+                                await kickPlayer(pin, player.id);
+                              }
+                            }}
                           />
                         </motion.div>
                       ))
