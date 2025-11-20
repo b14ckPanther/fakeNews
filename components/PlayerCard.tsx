@@ -13,35 +13,41 @@ interface PlayerCardProps {
 export default function PlayerCard({ name, score, isCurrentPlayer, isReady }: PlayerCardProps) {
   return (
     <div
-      className={`flex items-center gap-3 p-4 rounded-xl bg-white dark:bg-dark-bg-tertiary shadow-md border-2 transition-all ${
-        isCurrentPlayer ? 'ring-2 ring-primary-500 dark:ring-primary-400' : 'border-gray-200 dark:border-dark-border'
-      } ${isReady ? 'border-success-400 dark:border-success-500 bg-success-50 dark:bg-success-900/20' : ''}`}
+      className={`flex items-center gap-3 p-4 rounded-xl bg-white/10 backdrop-blur-md shadow-lg border-2 transition-all ${
+        isCurrentPlayer
+          ? 'border-purple-400 bg-purple-500/20'
+          : 'border-white/20 hover:border-purple-300/50'
+      } ${isReady ? 'border-green-400 bg-green-500/20' : ''}`}
     >
       <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
         isReady 
-          ? 'bg-success-100 dark:bg-success-900/30' 
-          : 'bg-primary-100 dark:bg-primary-900/30'
+          ? 'bg-green-500/30 border-2 border-green-400' 
+          : 'bg-purple-500/30 border-2 border-purple-400'
       }`}>
         <User className={`w-6 h-6 ${
           isReady 
-            ? 'text-success-600 dark:text-success-400' 
-            : 'text-primary-600 dark:text-primary-400'
+            ? 'text-green-300' 
+            : 'text-purple-300'
         }`} />
       </div>
       <div className="flex-1">
-        <div className="flex items-center gap-2">
-          <p className="font-semibold text-gray-800 dark:text-dark-text-primary">{name}</p>
-          {isReady && (
-            <span className="px-2 py-0.5 bg-success-500 dark:bg-success-600 text-white text-xs rounded-full font-semibold">
-              ✓
-            </span>
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="font-bold text-white">{name}</p>
+            {isReady && (
+              <span className="text-xs text-green-400 font-semibold">
+                ✓ Ready
+              </span>
+            )}
+          </div>
+          {score !== undefined && (
+            <div className="text-right">
+              <p className="text-sm text-white/70 font-medium">Score</p>
+              <p className="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400">{score}</p>
+            </div>
           )}
         </div>
-        {score !== undefined && (
-          <p className="text-sm text-gray-600 dark:text-dark-text-secondary">Score: {score}</p>
-        )}
       </div>
     </div>
   );
 }
-

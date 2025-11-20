@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useLocalization } from '@/lib/localization';
 import { useAuth } from '@/lib/auth';
@@ -19,6 +19,7 @@ import QRCodeDisplay from '@/components/QRCodeDisplay';
 import { Game, GameStatus, GameRound } from '@/types/game';
 import { Play, Users, ArrowRight, Trophy } from 'lucide-react';
 import { Suspense } from 'react';
+import { motion } from 'framer-motion';
 
 function AdminDashboardContent() {
   const searchParams = useSearchParams();
@@ -61,8 +62,8 @@ function AdminDashboardContent() {
     await updateGameStatus(pin, 'round1');
   };
 
-  const handleNextRound = async () => {
-    if (!game) return;
+  const handleNextRound = useCallback(async () => {
+    if (!game || !pin) return;
 
     const currentRoundNum = game.currentRound || 1;
 
@@ -93,7 +94,7 @@ function AdminDashboardContent() {
 
       await updateGameStatus(pin, 'results');
     }
-  };
+  }, [game, pin]);
 
   const handleShowResults = async () => {
     router.push(`/admin/results?gameId=${pin}`);
@@ -138,6 +139,35 @@ function AdminDashboardContent() {
     return () => unsubscribe();
   }, [pin, isAdmin]);
 
+  // Auto-advance to next round when timer expires (only once)
+  useEffect(() => {
+    if (!game || !currentRound || !pin) return;
+    if (game.status !== 'round1' && game.status !== 'round2' && game.status !== 'round3') return;
+
+    const checkTimer = () => {
+      const now = Date.now();
+      if (now >= currentRound.endTime) {
+        handleNextRound();
+        return true; // Signal that we advanced
+      }
+      return false;
+    };
+
+    // Check immediately
+    if (checkTimer()) {
+      return;
+    }
+
+    // Then check every second
+    const interval = setInterval(() => {
+      if (checkTimer()) {
+        clearInterval(interval);
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [game?.currentRound, currentRound?.endTime, pin, game?.status]);
+
   if (authLoading) {
     return (
       <div
@@ -166,36 +196,59 @@ function AdminDashboardContent() {
 
   return (
     <div
-      className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-success-50"
+      className="min-h-screen relative overflow-hidden"
       style={{ fontFamily, direction: isRTL ? 'rtl' : 'ltr' }}
     >
+      {/* Animated background matching player UI */}
+      <div className="fixed inset-0 -z-10">
+        <div className="absolute inset-0 bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900" />
+        <motion.div
+          className="absolute inset-0"
+          animate={{
+            background: [
+              'radial-gradient(circle at 20% 50%, rgba(120,119,198,0.3), transparent 50%)',
+              'radial-gradient(circle at 80% 50%, rgba(120,119,198,0.3), transparent 50%)',
+              'radial-gradient(circle at 20% 50%, rgba(120,119,198,0.3), transparent 50%)',
+            ],
+          }}
+          transition={{ duration: 8, repeat: Infinity }}
+        />
+      </div>
+
       <Header />
       
-      <div className="max-w-6xl mx-auto p-4 pt-8">
-        <div className="flex justify-between items-center mb-6">
+      <div className="max-w-6xl mx-auto p-4 pt-8 relative z-10">
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex justify-between items-center mb-6"
+        >
           <div>
-            <h1 className="text-3xl font-bold text-gray-800">
+            <h1 className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400 mb-2">
               {language === 'en' ? 'Admin Dashboard' : language === 'he' ? 'לוח בקרה' : 'لوحة تحكم المدير'}
             </h1>
             {!pin && (
-              <button
+              <motion.button
                 onClick={handleCreateGame}
-                className="mt-4 px-6 py-3 bg-primary-600 text-white rounded-lg font-semibold hover:bg-primary-700 transition-colors"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="mt-4 px-6 py-3 bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 text-white rounded-xl font-bold hover:from-purple-500 hover:via-pink-500 hover:to-blue-500 transition-all shadow-2xl border-2 border-white/30"
               >
                 {language === 'en' ? 'Create New Game' : language === 'he' ? 'צור משחק חדש' : 'إنشاء لعبة جديدة'}
-              </button>
+              </motion.button>
             )}
           </div>
-        </div>
+        </motion.div>
 
-        {pin && (
+        {/* Only show PIN and QR code when game is in lobby status */}
+        {pin && game && game.status === 'lobby' && (
           <div className="mb-6 grid md:grid-cols-2 gap-6">
-            <div className="p-6 bg-white dark:bg-dark-bg-secondary rounded-xl shadow-md border-2 border-gray-200 dark:border-dark-border">
-              <p className="text-sm text-gray-600 dark:text-dark-text-secondary mb-1">
+            <div className="p-6 bg-white/10 backdrop-blur-md rounded-xl shadow-xl border-2 border-white/20 dark:border-dark-border">
+              <p className="text-sm text-white/70 dark:text-dark-text-secondary mb-1">
                 {language === 'en' ? 'Game PIN' : language === 'he' ? 'PIN של המשחק' : 'رمز اللعبة'}
               </p>
-              <p className="text-2xl font-mono font-bold text-primary-600 dark:text-primary-400">{pin}</p>
-              <p className="text-xs text-gray-500 dark:text-dark-text-tertiary mt-2">
+              <p className="text-2xl font-mono font-bold text-white dark:text-primary-400">{pin}</p>
+              <p className="text-xs text-white/60 dark:text-dark-text-tertiary mt-2">
                 {language === 'en' 
                   ? 'Share this PIN with players to join' 
                   : language === 'he' 
@@ -212,93 +265,150 @@ function AdminDashboardContent() {
         {game && (
           <div className="grid md:grid-cols-3 gap-6">
             <div className="md:col-span-2 space-y-6">
-              <div className="bg-white rounded-2xl p-6 shadow-xl">
-                <div className="flex items-center gap-3 mb-4">
-                  <Users className="w-6 h-6 text-primary-600" />
-                  <h2 className="text-2xl font-bold text-gray-800">
-                    {t('lobby.players')} ({players.length})
-                  </h2>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-white/10 backdrop-blur-md rounded-2xl p-6 shadow-2xl border-2 border-white/20 relative overflow-hidden"
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 via-pink-500/10 to-blue-500/10" />
+                <div className="relative z-10">
+                  <div className="flex items-center gap-3 mb-4">
+                    <Users className="w-6 h-6 text-purple-400" />
+                    <h2 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400">
+                      {t('lobby.players')} ({players.length})
+                    </h2>
+                  </div>
+                  <div className="space-y-3">
+                    {players.length === 0 ? (
+                      <p className="text-white/70 text-center py-8 font-semibold">
+                        {language === 'en' && 'Waiting for players to join...'}
+                        {language === 'he' && 'ממתין לשחקנים להצטרף...'}
+                        {language === 'ar' && 'في انتظار انضمام اللاعبين...'}
+                      </p>
+                    ) : (
+                      players.map((player, index) => (
+                        <motion.div
+                          key={player.id}
+                          initial={{ opacity: 0, x: -20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: index * 0.1 }}
+                        >
+                          <PlayerCard
+                            name={player.name}
+                            score={player.score || 0}
+                          />
+                        </motion.div>
+                      ))
+                    )}
+                  </div>
                 </div>
-                <div className="space-y-3">
-                  {players.length === 0 ? (
-                    <p className="text-gray-500 text-center py-8">
-                      {language === 'en' && 'Waiting for players to join...'}
-                      {language === 'he' && 'ממתין לשחקנים להצטרף...'}
-                      {language === 'ar' && 'في انتظار انضمام اللاعبين...'}
-                    </p>
-                  ) : (
-                    players.map((player) => (
-                      <PlayerCard
-                        key={player.id}
-                        name={player.name}
-                        score={player.score || 0}
-                      />
-                    ))
-                  )}
-                </div>
-              </div>
+              </motion.div>
 
               {game.status === 'results' && (
-                <div className="bg-white rounded-2xl p-6 shadow-xl">
-                  <button
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="bg-white/10 backdrop-blur-md rounded-2xl p-6 shadow-2xl border-2 border-white/20 relative overflow-hidden"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-yellow-500/10 via-orange-500/10 to-red-500/10" />
+                  <motion.button
                     onClick={handleShowResults}
-                    className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-primary-600 text-white rounded-lg font-semibold hover:bg-primary-700 transition-colors"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="relative z-10 w-full flex items-center justify-center gap-2 px-6 py-4 bg-gradient-to-r from-yellow-500 via-orange-500 to-red-500 text-white rounded-xl font-bold hover:from-yellow-400 hover:via-orange-400 hover:to-red-400 transition-all shadow-2xl border-2 border-white/30"
                   >
                     <Trophy className="w-6 h-6" />
                     <span>{t('results.title')}</span>
-                  </button>
-                </div>
+                  </motion.button>
+                </motion.div>
               )}
             </div>
 
             <div className="space-y-6">
-              <div className="bg-white rounded-2xl p-6 shadow-xl">
-                <h2 className="text-xl font-bold text-gray-800 mb-4">
-                  {language === 'en' ? 'Game Controls' : language === 'he' ? 'בקרות משחק' : 'أدوات التحكم'}
-                </h2>
-                <div className="space-y-3">
-                  {game.status === 'lobby' && (
-                    <button
-                      onClick={handleStartGame}
-                      disabled={!canStart}
-                      className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-success-600 text-white rounded-lg font-semibold hover:bg-success-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <Play className="w-5 h-5" />
-                      <span>{t('admin.startGame')}</span>
-                    </button>
-                  )}
-
-                  {(game.status === 'round1' ||
-                    game.status === 'round2' ||
-                    game.status === 'round3') && (
-                    <>
-                      <div className="text-center p-4 bg-primary-50 rounded-lg">
-                        <p className="text-sm text-gray-600 mb-1">
-                          {language === 'en' ? 'Round' : language === 'he' ? 'סיבוב' : 'الجولة'}
-                        </p>
-                        <p className="text-3xl font-bold text-primary-600">
-                          {game.currentRound || 1}
-                        </p>
-                      </div>
-                      <button
-                        onClick={handleNextRound}
-                        disabled={!canNextRound}
-                        className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-primary-600 text-white rounded-lg font-semibold hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="bg-white/10 backdrop-blur-md rounded-2xl p-6 shadow-2xl border-2 border-white/20 relative overflow-hidden"
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 via-pink-500/10 to-blue-500/10" />
+                <div className="relative z-10">
+                  <h2 className="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400 mb-4">
+                    {language === 'en' ? 'Game Controls' : language === 'he' ? 'בקרות משחק' : 'أدوات التحكم'}
+                  </h2>
+                  <div className="space-y-3">
+                    {game.status === 'lobby' && (
+                      <motion.button
+                        onClick={handleStartGame}
+                        disabled={!canStart}
+                        whileHover={{ scale: !canStart ? 1 : 1.05 }}
+                        whileTap={{ scale: !canStart ? 1 : 0.95 }}
+                        className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl font-bold hover:from-green-400 hover:to-emerald-500 transition-all shadow-2xl border-2 border-white/30 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        <ArrowRight className="w-5 h-5" />
-                        <span>{t('admin.nextRound')}</span>
-                      </button>
-                    </>
-                  )}
-                </div>
-              </div>
+                        <Play className="w-5 h-5" />
+                        <span>{t('admin.startGame')}</span>
+                      </motion.button>
+                    )}
 
-              <div className="bg-white rounded-2xl p-6 shadow-xl">
-                <h2 className="text-xl font-bold text-gray-800 mb-2">
-                  {language === 'en' ? 'Status' : language === 'he' ? 'סטטוס' : 'الحالة'}
-                </h2>
-                <p className="text-lg text-gray-600 capitalize">{game.status}</p>
-              </div>
+                    {(game.status === 'round1' ||
+                      game.status === 'round2' ||
+                      game.status === 'round3') && (
+                      <>
+                        <div className="text-center p-4 bg-white/10 rounded-xl border-2 border-white/20 backdrop-blur-sm">
+                          <p className="text-sm text-white/70 mb-1 font-medium">
+                            {language === 'en' ? 'Round' : language === 'he' ? 'סיבוב' : 'الجولة'}
+                          </p>
+                          <p className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400">
+                            {game.currentRound || 1}
+                          </p>
+                        </div>
+                        
+                        {/* Manual proceed button - always enabled */}
+                        <motion.button
+                          onClick={handleNextRound}
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                          className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl font-bold hover:from-green-400 hover:to-emerald-500 transition-all shadow-2xl border-2 border-white/30"
+                        >
+                          <ArrowRight className="w-5 h-5" />
+                          <span>
+                            {language === 'en' ? 'Proceed to Next Round' : language === 'he' ? 'המשך לסיבוב הבא' : 'المتابعة إلى الجولة التالية'}
+                          </span>
+                        </motion.button>
+                        
+                        {/* Auto-enabled next round button when timer expires */}
+                        {canNextRound && (
+                          <motion.button
+                            onClick={handleNextRound}
+                            initial={{ opacity: 0, y: -10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 text-white rounded-xl font-bold hover:from-purple-500 hover:via-pink-500 hover:to-blue-500 transition-all shadow-2xl border-2 border-white/30 mt-2"
+                          >
+                            <ArrowRight className="w-5 h-5" />
+                            <span>{t('admin.nextRound')}</span>
+                          </motion.button>
+                        )}
+                      </>
+                    )}
+                  </div>
+                </div>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.1 }}
+                className="bg-white/10 backdrop-blur-md rounded-2xl p-6 shadow-2xl border-2 border-white/20 relative overflow-hidden"
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 via-pink-500/10 to-blue-500/10" />
+                <div className="relative z-10">
+                  <h2 className="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400 mb-2">
+                    {language === 'en' ? 'Status' : language === 'he' ? 'סטטוס' : 'الحالة'}
+                  </h2>
+                  <p className="text-lg font-bold text-white capitalize">{game.status}</p>
+                </div>
+              </motion.div>
             </div>
           </div>
         )}
