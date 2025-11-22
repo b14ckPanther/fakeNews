@@ -31,18 +31,18 @@ export const falseStatements: Sentence[] = [
   {
     id: 'false-4',
     text: {
-      en: 'Goldfish have a 3-second memory.',
-      he: 'לדגי זהב יש זיכרון של 3 שניות.',
-      ar: 'أسماك الزينة لديها ذاكرة لمدة 3 ثوانٍ.',
+      en: 'Goldfish have a three-second memory.',
+      he: 'לדג זהב יש זיכרון של שלוש שניות.',
+      ar: 'السمكة الذهبية تتذكر فقط لثلاث ثوانٍ.',
     },
     isFake: true,
   },
   {
     id: 'false-5',
     text: {
-      en: 'Sugar makes kids hyperactive.',
+      en: 'Sugar makes children hyperactive.',
       he: 'סוכר גורם לילדים להיות היפראקטיביים.',
-      ar: 'السكر يجعل الأطفال مفرطين في النشاط.',
+      ar: 'السكر يجعل الأطفال هايبر ونشيطين زيادة.',
     },
     isFake: true,
   },
@@ -50,17 +50,17 @@ export const falseStatements: Sentence[] = [
     id: 'false-6',
     text: {
       en: 'Lightning never strikes the same place twice.',
-      he: 'ברקים לעולם לא פוגעים באותו מקום פעמיים.',
-      ar: 'البرق لا يضرب نفس المكان مرتين أبدًا.',
+      he: 'ברק אף פעם לא פוגע באותו מקום פעמיים.',
+      ar: 'البرق لا يضرب نفس المكان مرتين.',
     },
     isFake: true,
   },
   {
     id: 'false-7',
     text: {
-      en: 'Shaving makes hair grow thicker.',
-      he: 'גילוח גורם לשיער לגדול עבה יותר.',
-      ar: 'الحلاقة تجعل الشعر ينمو بشكل أكثر سماكة.',
+      en: 'Shaving makes hair grow back thicker.',
+      he: 'גילוח גורם לשיער לצמוח עבה וכהה יותר.',
+      ar: 'الحلاقة تجعل الشعر ينمو أسمك وأغمق.',
     },
     isFake: true,
   },
@@ -87,7 +87,7 @@ export const falseStatements: Sentence[] = [
     text: {
       en: 'Bulls hate the color red.',
       he: 'שוורים שונאים את הצבע האדום.',
-      ar: 'الثيران تكره اللون الأحمر.',
+      ar: 'الثور يكره اللون الأحمر.',
     },
     isFake: true,
   },
@@ -233,8 +233,8 @@ export const trueStatements: Sentence[] = [
     id: 'true-6',
     text: {
       en: 'Camels store fat, not water.',
-      he: 'גמלים מאחסנים שומן, לא מים.',
-      ar: 'الإبل تخزن الدهون وليس الماء.',
+      he: 'גמלים אוגרים שומן, לא מים.',
+      ar: 'الجِمال تخزّن الدهون، مش الماء.',
     },
     isFake: false,
   },
@@ -242,8 +242,8 @@ export const trueStatements: Sentence[] = [
     id: 'true-7',
     text: {
       en: 'Bananas grow on a giant herb, not a tree.',
-      he: 'בננות גדלות על עשב ענק, לא על עץ.',
-      ar: 'الموز ينمو على عشب عملاق وليس على شجرة.',
+      he: 'בננה היא עשב, לא עץ.',
+      ar: 'الموز في الحقيقة نوع من الأعشاب وليس شجرة.',
     },
     isFake: false,
   },
@@ -268,9 +268,9 @@ export const trueStatements: Sentence[] = [
   {
     id: 'true-10',
     text: {
-      en: 'Sleeping less than 6 hours increases risk of early death.',
-      he: 'שינה של פחות מ-6 שעות מגבירה את הסיכון למוות מוקדם.',
-      ar: 'النوم أقل من 6 ساعات يزيد من خطر الوفاة المبكرة.',
+      en: 'Sleeping less than 6 hours increases early-death risk.',
+      he: 'שינה של פחות מ-6 שעות מעלה סיכון למוות מוקדם.',
+      ar: 'النوم أقل من 6 ساعات يومياً يزيد خطر الوفاة المبكرة.',
     },
     isFake: false,
   },

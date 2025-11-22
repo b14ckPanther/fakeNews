@@ -11,9 +11,17 @@ function shuffleArray<T>(array: T[]): T[] {
 }
 
 // Round 1: 7 sentences (5 fake + 2 true)
+// Round 1: 7 sentences (5 fake + 2 true) from specific list
 export function generateRound1(): Sentence[] {
-  const fake = shuffleArray([...falseStatements]).slice(0, 5);
-  const true_ = shuffleArray([...trueStatements]).slice(0, 2);
+  const specificFakeIds = ['false-10', 'false-8', 'false-7', 'false-4', 'false-5', 'false-6'];
+  const specificTrueIds = ['true-6', 'true-7', 'true-10'];
+
+  const fakePool = falseStatements.filter(s => specificFakeIds.includes(s.id));
+  const truePool = trueStatements.filter(s => specificTrueIds.includes(s.id));
+
+  const fake = shuffleArray([...fakePool]).slice(0, 5);
+  const true_ = shuffleArray([...truePool]).slice(0, 2);
+
   return shuffleArray([...fake, ...true_]);
 }
 
