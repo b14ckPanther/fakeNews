@@ -8,15 +8,17 @@ import {
   subscribeToGame,
   updateGameStatus,
   updateGameRound,
+  advanceGameRound,
   calculateAndUpdatePlayerScore,
   createGame,
   kickPlayer,
   restartGame,
+  stopGame,
   regeneratePin,
 } from '@/lib/firestore';
 import { generateRound1, generateRound2, generateRound3, createGameRound } from '@/lib/gameLogic';
 import Header from '@/components/Header';
-import LanguageSwitcher from '@/components/LanguageSwitcher';
+
 import PlayerCard from '@/components/PlayerCard';
 import QRCodeDisplay from '@/components/QRCodeDisplay';
 import { Game, GameStatus, GameRound } from '@/types/game';
@@ -48,7 +50,7 @@ function AdminDashboardContent() {
 
   useEffect(() => {
     if (authLoading) return;
-    
+
     if (!user || !isAdmin) {
       router.push('/admin/login');
       return;
@@ -75,8 +77,7 @@ function AdminDashboardContent() {
       const round2Sentences = generateRound2(round1Sentences);
       const round2Data = createGameRound(2, round2Sentences, game.rounds[1]);
 
-      await updateGameRound(pin, 2, round2Data);
-      await updateGameStatus(pin, 'round2');
+      await advanceGameRound(pin, 2, round2Data, 'round2');
     } else if (currentRoundNum === 2) {
       const playerIds = Object.keys(game.players);
       await Promise.all(
@@ -87,8 +88,7 @@ function AdminDashboardContent() {
       const round3Sentences = generateRound3(round2Sentences);
       const round3Data = createGameRound(3, round3Sentences, game.rounds[2]);
 
-      await updateGameRound(pin, 3, round3Data);
-      await updateGameStatus(pin, 'round3');
+      await advanceGameRound(pin, 3, round3Data, 'round3');
     } else if (currentRoundNum === 3) {
       const playerIds = Object.keys(game.players);
       await Promise.all(
@@ -105,13 +105,13 @@ function AdminDashboardContent() {
 
   const handleRestartGame = async () => {
     if (!pin || !game) return;
-    
+
     if (window.confirm(
-      language === 'en' 
+      language === 'en'
         ? 'Are you sure you want to restart the game? This will reset all rounds and player scores, but keep players in the game.'
         : language === 'he'
-        ? 'האם אתה בטוח שברצונך לאתחל את המשחק? זה יאפס את כל הסיבובים והניקודים, אך ישמור על השחקנים במשחק.'
-        : 'هل أنت متأكد أنك تريد إعادة تشغيل اللعبة؟ سيؤدي هذا إلى إعادة تعيين جميع الجولات والنتائج، ولكن سيحتفظ باللاعبين في اللعبة.'
+          ? 'האם אתה בטוח שברצונך לאתחל את המשחק? זה יאפס את כל הסיבובים והניקודים, אך ישמור על השחקנים במשחק.'
+          : 'هل أنت متأكد أنك تريد إعادة تشغيل اللعبة؟ سيؤدي هذا إلى إعادة تعيين جميع الجولات والنتائج، ولكن سيحتفظ باللاعبين في اللعبة.'
     )) {
       await restartGame(pin);
     }
@@ -119,13 +119,13 @@ function AdminDashboardContent() {
 
   const handleRegeneratePin = async () => {
     if (!pin || !game) return;
-    
+
     if (window.confirm(
-      language === 'en' 
+      language === 'en'
         ? 'Are you sure you want to regenerate the PIN and QR code? Players will need to rejoin with the new PIN.'
         : language === 'he'
-        ? 'האם אתה בטוח שברצונך ליצור מחדש את ה-PIN וקוד ה-QR? השחקנים יצטרכו להצטרף מחדש עם ה-PIN החדש.'
-        : 'هل أنت متأكد أنك تريد إعادة إنشاء رمز PIN وكود QR؟ سيحتاج اللاعبون إلى إعادة الانضمام برمز PIN الجديد.'
+          ? 'האם אתה בטוח שברצונך ליצור מחדש את ה-PIN וקוד ה-QR? השחקנים יצטרכו להצטרף מחדש עם ה-PIN החדש.'
+          : 'هل أنت متأكد أنك تريد إعادة إنشاء رمز PIN وكود QR؟ سيحتاج اللاعبون إلى إعادة الانضمام برمز PIN الجديد.'
     )) {
       const newPin = Math.floor(100000 + Math.random() * 900000).toString();
       try {
@@ -136,11 +136,11 @@ function AdminDashboardContent() {
       } catch (error) {
         console.error('Error regenerating PIN:', error);
         alert(
-          language === 'en' 
+          language === 'en'
             ? 'Error regenerating PIN. Please try again.'
             : language === 'he'
-            ? 'שגיאה ביצירת PIN מחדש. אנא נסה שוב.'
-            : 'خطأ في إعادة إنشاء رمز PIN. يرجى المحاولة مرة أخرى.'
+              ? 'שגיאה ביצירת PIN מחדש. אנא נסה שוב.'
+              : 'خطأ في إعادة إنشاء رمز PIN. يرجى المحاولة مرة أخرى.'
         );
       }
     }
@@ -148,7 +148,7 @@ function AdminDashboardContent() {
 
   const handleCreateGame = async () => {
     if (!user) return;
-    
+
     const newPin = Math.floor(100000 + Math.random() * 900000).toString();
     try {
       const createdGameId = await createGame(user.uid, newPin);
@@ -214,6 +214,38 @@ function AdminDashboardContent() {
     return () => clearInterval(interval);
   }, [game?.currentRound, currentRound?.endTime, pin, game?.status]);
 
+  // Auto-advance when all players have answered
+  useEffect(() => {
+    if (!game || !currentRound || !pin) return;
+    if (game.status !== 'round1' && game.status !== 'round2' && game.status !== 'round3') return;
+
+    // Round 1 is read-only, check if all players are ready
+    if (game.status === 'round1') {
+      const allReady = Object.values(game.players).every(p => p.round1Ready);
+      if (allReady && Object.values(game.players).length > 0) {
+        handleNextRound();
+      }
+      return;
+    }
+
+    // For other rounds, check if all players have answered all questions
+    const allAnswered = Object.values(game.players).every(player => {
+      const playerAnswers = player.answers[game.currentRound!] || {};
+      return currentRound.sentences.every(s => playerAnswers[s.id] !== undefined);
+    });
+
+    if (allAnswered && Object.values(game.players).length > 0) {
+      handleNextRound();
+    }
+  }, [game, currentRound, pin, handleNextRound]);
+
+  const handleStopGame = async () => {
+    if (!pin) return;
+    if (window.confirm(language === 'en' ? 'Stop game and show results?' : language === 'he' ? 'לעצור את המשחק ולהציג תוצאות?' : 'إيقاف اللعبة وعرض النتائج؟')) {
+      await stopGame(pin);
+    }
+  };
+
   if (authLoading) {
     return (
       <div
@@ -262,7 +294,7 @@ function AdminDashboardContent() {
       </div>
 
       <Header />
-      
+
       <div className="max-w-6xl mx-auto p-4 pt-8 relative z-10">
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -295,11 +327,11 @@ function AdminDashboardContent() {
               </p>
               <p className="text-2xl font-mono font-bold text-white dark:text-primary-400">{pin}</p>
               <p className="text-xs text-white/60 dark:text-dark-text-tertiary mt-2">
-                {language === 'en' 
-                  ? 'Share this PIN with players to join' 
-                  : language === 'he' 
-                  ? 'שתף את ה-PIN הזה עם שחקנים להצטרפות' 
-                  : 'شارك رمز PIN هذا مع اللاعبين للانضمام'}
+                {language === 'en'
+                  ? 'Share this PIN with players to join'
+                  : language === 'he'
+                    ? 'שתף את ה-PIN הזה עם שחקנים להצטרפות'
+                    : 'شارك رمز PIN هذا مع اللاعبين للانضمام'}
               </p>
             </div>
             <div className="flex items-center justify-center">
@@ -345,11 +377,11 @@ function AdminDashboardContent() {
                             showKickButton={true}
                             onKick={async () => {
                               if (pin && window.confirm(
-                                language === 'en' 
+                                language === 'en'
                                   ? `Are you sure you want to kick ${player.name}?`
                                   : language === 'he'
-                                  ? `האם אתה בטוח שברצונך להסיר את ${player.name}?`
-                                  : `هل أنت متأكد أنك تريد طرد ${player.name}؟`
+                                    ? `האם אתה בטוח שברצונך להסיר את ${player.name}?`
+                                    : `هل أنت متأكد أنك تريد طرد ${player.name}؟`
                               )) {
                                 await kickPlayer(pin, player.id);
                               }
@@ -410,59 +442,73 @@ function AdminDashboardContent() {
                     {(game.status === 'round1' ||
                       game.status === 'round2' ||
                       game.status === 'round3') && (
-                      <>
-                        <div className="text-center p-4 bg-white/10 rounded-xl border-2 border-white/20 backdrop-blur-sm">
-                          <p className="text-sm text-white/70 mb-1 font-medium">
-                            {language === 'en' ? 'Round' : language === 'he' ? 'סיבוב' : 'الجولة'}
-                          </p>
-                          <p className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400">
-                            {game.currentRound || 1}
-                          </p>
-                        </div>
-                        
-                        {/* Manual proceed button - always enabled */}
-                        <motion.button
-                          onClick={handleNextRound}
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.95 }}
-                          className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl font-bold hover:from-green-400 hover:to-emerald-500 transition-all shadow-2xl border-2 border-white/30"
-                        >
-                          <ArrowRight className="w-5 h-5" />
-                          <span>
-                            {language === 'en' ? 'Proceed to Next Round' : language === 'he' ? 'המשך לסיבוב הבא' : 'المتابعة إلى الجولة التالية'}
-                          </span>
-                        </motion.button>
-                        
-                        {/* Auto-enabled next round button when timer expires */}
-                        {canNextRound && (
+                        <>
+                          <div className="text-center p-4 bg-white/10 rounded-xl border-2 border-white/20 backdrop-blur-sm">
+                            <p className="text-sm text-white/70 mb-1 font-medium">
+                              {language === 'en' ? 'Round' : language === 'he' ? 'סיבוב' : 'الجولة'}
+                            </p>
+                            <p className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400">
+                              {game.currentRound || 1}
+                            </p>
+                          </div>
+
+                          {/* Manual proceed button - always enabled */}
                           <motion.button
                             onClick={handleNextRound}
-                            initial={{ opacity: 0, y: -10 }}
-                            animate={{ opacity: 1, y: 0 }}
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
-                            className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 text-white rounded-xl font-bold hover:from-purple-500 hover:via-pink-500 hover:to-blue-500 transition-all shadow-2xl border-2 border-white/30 mt-2"
+                            className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl font-bold hover:from-green-400 hover:to-emerald-500 transition-all shadow-2xl border-2 border-white/30"
                           >
                             <ArrowRight className="w-5 h-5" />
-                            <span>{t('admin.nextRound')}</span>
+                            <span>
+                              {language === 'en' ? 'Proceed to Next Round' : language === 'he' ? 'המשך לסיבוב הבא' : 'المتابعة إلى الجولة التالية'}
+                            </span>
                           </motion.button>
-                        )}
-                      </>
-                    )}
+
+                          {/* Auto-enabled next round button when timer expires */}
+                          {canNextRound && (
+                            <motion.button
+                              onClick={handleNextRound}
+                              initial={{ opacity: 0, y: -10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              whileHover={{ scale: 1.05 }}
+                              whileTap={{ scale: 0.95 }}
+                              className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 text-white rounded-xl font-bold hover:from-purple-500 hover:via-pink-500 hover:to-blue-500 transition-all shadow-2xl border-2 border-white/30 mt-2"
+                            >
+                              <ArrowRight className="w-5 h-5" />
+                              <span>{t('admin.nextRound')}</span>
+                            </motion.button>
+                          )}
+                        </>
+                      )}
 
                     {/* Restart Game Button - Show when game is not in lobby */}
                     {game.status !== 'lobby' && (
-                      <motion.button
-                        onClick={handleRestartGame}
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-gradient-to-r from-orange-600 via-red-600 to-orange-600 text-white rounded-xl font-bold hover:from-orange-500 hover:via-red-500 hover:to-orange-500 transition-all shadow-2xl border-2 border-white/30 mt-3"
-                      >
-                        <RotateCcw className="w-5 h-5" />
-                        <span>
-                          {language === 'en' ? 'Restart Game' : language === 'he' ? 'אתחל משחק' : 'إعادة تشغيل اللعبة'}
-                        </span>
-                      </motion.button>
+                      <>
+                        <motion.button
+                          onClick={handleStopGame}
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                          className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-gradient-to-r from-red-600 via-red-500 to-red-600 text-white rounded-xl font-bold hover:from-red-500 hover:via-red-400 hover:to-red-500 transition-all shadow-2xl border-2 border-white/30 mt-3"
+                        >
+                          <Trophy className="w-5 h-5" />
+                          <span>
+                            {language === 'en' ? 'Stop Game' : language === 'he' ? 'עצור משחק' : 'إيقاف اللعبة'}
+                          </span>
+                        </motion.button>
+
+                        <motion.button
+                          onClick={handleRestartGame}
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                          className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-gradient-to-r from-orange-600 via-red-600 to-orange-600 text-white rounded-xl font-bold hover:from-orange-500 hover:via-red-500 hover:to-orange-500 transition-all shadow-2xl border-2 border-white/30 mt-3"
+                        >
+                          <RotateCcw className="w-5 h-5" />
+                          <span>
+                            {language === 'en' ? 'Restart Game' : language === 'he' ? 'אתחל משחק' : 'إعادة تشغيل اللعبة'}
+                          </span>
+                        </motion.button>
+                      </>
                     )}
 
                     {/* Regenerate QR & Pin Button */}

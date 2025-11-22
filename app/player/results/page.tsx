@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { useLocalization } from '@/lib/localization';
 import { subscribeToGame } from '@/lib/firestore';
 import { Game, Player, getScoreCategory } from '@/types/game';
-import LanguageSwitcher from '@/components/LanguageSwitcher';
+
 import { Trophy, Award, Target, User, Crown, Sparkles, Star, Zap } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -156,9 +156,7 @@ function PlayerResultsPageContent() {
         />
       ))}
 
-      <div className="absolute top-4 right-4 z-20">
-        <LanguageSwitcher />
-      </div>
+
 
       <div className="max-w-5xl mx-auto pt-8 relative z-10">
         {/* Score reveal animation */}
@@ -221,11 +219,8 @@ function PlayerResultsPageContent() {
             className="mb-6"
           >
             <div className="text-8xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-orange-400 to-red-400">
-              {score}
+              {score}%
             </div>
-            <p className="text-xl text-white/70 mt-2">
-              {language === 'en' ? 'points' : language === 'he' ? 'נקודות' : 'نقاط'}
-            </p>
           </motion.div>
 
           {/* Category badge with spectacular jumping animation */}
@@ -233,25 +228,25 @@ function PlayerResultsPageContent() {
             {showCategory && (
               <motion.div
                 initial={{ opacity: 0, scale: 0, y: 200, rotate: -360, x: -200 }}
-                animate={{ 
-                  opacity: 1, 
-                  scale: 1, 
-                  y: 0, 
+                animate={{
+                  opacity: 1,
+                  scale: 1,
+                  y: 0,
                   rotate: 0,
                   x: 0,
                 }}
                 exit={{ opacity: 0, scale: 0 }}
-                transition={{ 
-                  type: 'spring', 
-                  stiffness: 100, 
+                transition={{
+                  type: 'spring',
+                  stiffness: 100,
                   damping: 15,
-                  delay: 0.8 
+                  delay: 0.8
                 }}
                 className="inline-block relative"
               >
                 <motion.div
                   className={`absolute inset-0 bg-gradient-to-r ${categoryConfig.bgGradient} rounded-3xl blur-3xl opacity-70`}
-                  animate={{ 
+                  animate={{
                     scale: [1, 1.3, 1],
                     opacity: [0.7, 0.9, 0.7],
                   }}
@@ -286,16 +281,16 @@ function PlayerResultsPageContent() {
                         rotate: { duration: 2, repeat: Infinity, ease: 'linear' },
                         scale: { duration: 1.5, repeat: Infinity },
                       }}
-                      className="relative"
+                      className="relative -mt-6"
                     >
                       <CategoryIcon className={`w-20 h-20 text-transparent bg-clip-text bg-gradient-to-r ${categoryConfig.gradient}`} />
                       <motion.div
                         className="absolute -top-3 -right-3"
-                        animate={{ 
+                        animate={{
                           rotate: 360,
                           scale: [1, 1.3, 1],
                         }}
-                        transition={{ 
+                        transition={{
                           rotate: { duration: 2, repeat: Infinity, ease: 'linear' },
                           scale: { duration: 1, repeat: Infinity },
                         }}
@@ -306,18 +301,18 @@ function PlayerResultsPageContent() {
                     <div className="text-center">
                       <motion.div
                         className="text-6xl mb-2"
-                        animate={{ 
+                        animate={{
                           scale: [1, 1.3, 1],
                           rotate: [0, 10, -10, 10, -10, 0],
                         }}
-                        transition={{ 
+                        transition={{
                           scale: { duration: 0.8, repeat: Infinity },
                           rotate: { duration: 2, repeat: Infinity },
                         }}
                       >
                         {categoryConfig.emoji}
                       </motion.div>
-                      <motion.p 
+                      <motion.p
                         className={`text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r ${categoryConfig.gradient} tracking-wider`}
                         animate={{
                           scale: [1, 1.05, 1],
@@ -378,11 +373,10 @@ function PlayerResultsPageContent() {
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: index * 0.1 + 0.5 }}
                         whileHover={{ scale: 1.02, x: isRTL ? -10 : 10 }}
-                        className={`p-5 rounded-2xl border-2 backdrop-blur-md transition-all ${
-                          isCurrentPlayer
-                            ? 'bg-gradient-to-r from-purple-500/30 via-pink-500/30 to-blue-500/30 border-purple-400 shadow-2xl'
-                            : 'bg-white/5 border-white/20 hover:border-purple-300/50'
-                        }`}
+                        className={`p-5 rounded-2xl border-2 backdrop-blur-md transition-all ${isCurrentPlayer
+                          ? 'bg-gradient-to-r from-purple-500/30 via-pink-500/30 to-blue-500/30 border-purple-400 shadow-2xl'
+                          : 'bg-white/5 border-white/20 hover:border-purple-300/50'
+                          }`}
                       >
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-4 flex-1">
@@ -395,11 +389,10 @@ function PlayerResultsPageContent() {
                                 transition={{ duration: 2, repeat: Infinity }}
                                 className="relative"
                               >
-                                <Crown className={`w-10 h-10 ${
-                                  index === 0 ? 'text-yellow-400' :
+                                <Crown className={`w-10 h-10 ${index === 0 ? 'text-yellow-400' :
                                   index === 1 ? 'text-gray-300' :
-                                  'text-orange-400'
-                                }`} />
+                                    'text-orange-400'
+                                  }`} />
                                 <motion.div
                                   className="absolute -top-2 -right-2"
                                   animate={{ rotate: 360 }}
@@ -436,10 +429,7 @@ function PlayerResultsPageContent() {
                           </div>
                           <div className="text-right">
                             <p className={`text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r ${pCategoryConfig.gradient}`}>
-                              {p.score || 0}
-                            </p>
-                            <p className="text-sm text-white/60">
-                              {language === 'en' ? 'pts' : language === 'he' ? 'נק' : 'نق'}
+                              {p.score || 0}%
                             </p>
                           </div>
                         </div>
@@ -451,6 +441,20 @@ function PlayerResultsPageContent() {
             </motion.div>
           )}
         </AnimatePresence>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 1.5 }}
+          className="mt-12 text-center pb-8"
+        >
+          <button
+            onClick={() => window.location.href = '/'}
+            className="px-8 py-4 bg-white/10 hover:bg-white/20 text-white rounded-xl font-bold text-lg transition-all border-2 border-white/20 hover:border-white/40 backdrop-blur-md shadow-xl"
+          >
+            {language === 'en' ? 'Back to Home' : language === 'he' ? 'חזרה לדף הבית' : 'العودة إلى الصفحة الرئيسية'}
+          </button>
+        </motion.div>
       </div>
     </div>
   );

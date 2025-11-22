@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
 import { useLocalization } from '@/lib/localization';
-import LanguageSwitcher from '@/components/LanguageSwitcher';
+
 import { Shield, LogIn, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 
@@ -12,7 +12,7 @@ export default function AdminLoginPage() {
   const router = useRouter();
   const { login, loading } = useAuth();
   const { t, language, isRTL, fontFamily } = useLocalization();
-  
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -28,12 +28,12 @@ export default function AdminLoginPage() {
       router.push('/admin/dashboard');
     } catch (err: any) {
       setError(
-        err.message || 
-        (language === 'en' 
-          ? 'Invalid email or password' 
-          : language === 'he' 
-          ? 'אימייל או סיסמה שגויים' 
-          : 'البريد الإلكتروني أو كلمة المرور غير صحيحة')
+        err.message ||
+        (language === 'en'
+          ? 'Invalid email or password'
+          : language === 'he'
+            ? 'אימייל או סיסמה שגויים'
+            : 'البريد الإلكتروني أو كلمة المرور غير صحيحة')
       );
     } finally {
       setIsSubmitting(false);
@@ -51,9 +51,7 @@ export default function AdminLoginPage() {
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_50%,rgba(120,119,198,0.3),transparent_50%)]" />
       </div>
 
-      <div className="absolute top-4 right-4 z-10">
-        <LanguageSwitcher />
-      </div>
+
 
       <div className="max-w-md w-full space-y-6 relative z-10">
         <div className="text-center">
@@ -64,11 +62,11 @@ export default function AdminLoginPage() {
             {language === 'en' ? 'Admin Login' : language === 'he' ? 'כניסת מנהל' : 'تسجيل دخول المدير'}
           </h1>
           <p className="text-white/80">
-            {language === 'en' 
-              ? 'Access the admin dashboard to manage games' 
-              : language === 'he' 
-              ? 'גש ללוח הבקרה כדי לנהל משחקים' 
-              : 'الوصول إلى لوحة تحكم المدير لإدارة الألعاب'}
+            {language === 'en'
+              ? 'Access the admin dashboard to manage games'
+              : language === 'he'
+                ? 'גש ללוח הבקרה כדי לנהל משחקים'
+                : 'الوصول إلى لوحة تحكم المدير لإدارة الألعاب'}
           </p>
         </div>
 
@@ -120,7 +118,7 @@ export default function AdminLoginPage() {
             >
               <LogIn className="w-5 h-5" />
               <span>
-                {isSubmitting 
+                {isSubmitting
                   ? (language === 'en' ? 'Logging in...' : language === 'he' ? 'מתחבר...' : 'جارٍ تسجيل الدخول...')
                   : (language === 'en' ? 'Login' : language === 'he' ? 'התחבר' : 'تسجيل الدخول')
                 }

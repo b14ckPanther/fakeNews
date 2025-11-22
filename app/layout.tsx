@@ -1,8 +1,9 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { LocalizationProvider } from '@/lib/localization';
 import { AuthProvider } from '@/lib/auth';
 import { ThemeProvider } from '@/lib/theme';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
 
 export const metadata: Metadata = {
   title: 'Fake News Seminar Game',
@@ -22,14 +23,15 @@ export const metadata: Metadata = {
       { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
     ],
   },
+};
+
+export const viewport: Viewport = {
   themeColor: '#0284c7',
-  viewport: {
-    width: 'device-width',
-    initialScale: 1,
-    maximumScale: 1,
-    userScalable: false,
-    viewportFit: 'cover',
-  },
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: 'cover',
 };
 
 export default function RootLayout({
@@ -55,7 +57,12 @@ export default function RootLayout({
       <body>
         <ThemeProvider>
           <AuthProvider>
-            <LocalizationProvider>{children}</LocalizationProvider>
+            <LocalizationProvider>
+              <div className="fixed top-4 right-4 z-50">
+                <LanguageSwitcher />
+              </div>
+              {children}
+            </LocalizationProvider>
           </AuthProvider>
         </ThemeProvider>
       </body>

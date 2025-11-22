@@ -22,7 +22,7 @@ function AdminResultsPageContent() {
 
   useEffect(() => {
     if (authLoading) return;
-    
+
     if (!user || !isAdmin) {
       router.push('/admin/login');
       return;
@@ -160,7 +160,7 @@ function AdminResultsPageContent() {
       </div>
 
       <Header />
-      
+
       <div className="max-w-6xl mx-auto p-4 pt-8 relative z-10">
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -192,6 +192,7 @@ function AdminResultsPageContent() {
                         <motion.div
                           animate={{ rotate: [0, 360] }}
                           transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}
+                          className="-mt-2"
                         >
                           <Icon className={`w-8 h-8 text-transparent bg-clip-text bg-gradient-to-r ${config.gradient}`} />
                         </motion.div>
@@ -267,25 +268,24 @@ function AdminResultsPageContent() {
                       <motion.div
                         key={player.playerId}
                         initial={{ opacity: 0, x: isRTL ? -100 : 100, y: 100, scale: 0.5, rotate: -45 }}
-                        animate={{ 
-                          opacity: 1, 
-                          x: 0, 
+                        animate={{
+                          opacity: 1,
+                          x: 0,
                           y: 0,
                           scale: 1,
                           rotate: 0,
                         }}
-                        transition={{ 
+                        transition={{
                           delay: 0.7 + index * 0.15,
                           type: 'spring',
                           stiffness: 150,
                           damping: 15,
                         }}
                         whileHover={{ scale: 1.05, y: -5 }}
-                        className={`p-6 rounded-2xl border-2 backdrop-blur-md transition-all relative overflow-hidden ${
-                          isTopThree
-                            ? 'bg-gradient-to-r from-purple-500/30 via-pink-500/30 to-blue-500/30 border-purple-400 shadow-2xl'
-                            : 'bg-white/5 border-white/20 hover:border-purple-300/50'
-                        }`}
+                        className={`p-6 rounded-2xl border-2 backdrop-blur-md transition-all relative overflow-hidden ${isTopThree
+                          ? 'bg-gradient-to-r from-purple-500/30 via-pink-500/30 to-blue-500/30 border-purple-400 shadow-2xl'
+                          : 'bg-white/5 border-white/20 hover:border-purple-300/50'
+                          }`}
                       >
                         {/* Winner glow effect */}
                         {isWinner && (
@@ -306,27 +306,26 @@ function AdminResultsPageContent() {
                                   scale: [1, 1.3, 1],
                                   y: isWinner ? [0, -10, 0] : 0,
                                 }}
-                                transition={{ 
-                                  duration: 2, 
+                                transition={{
+                                  duration: 2,
                                   repeat: Infinity,
                                   y: { duration: 1.5, repeat: Infinity },
                                 }}
                                 className="relative"
                               >
-                                <Crown className={`w-14 h-14 ${
-                                  index === 0 ? 'text-yellow-400 drop-shadow-lg' :
+                                <Crown className={`w-14 h-14 ${index === 0 ? 'text-yellow-400 drop-shadow-lg' :
                                   index === 1 ? 'text-gray-300' :
-                                  'text-orange-400'
-                                }`} />
+                                    'text-orange-400'
+                                  }`} />
                                 {index === 0 && (
                                   <>
                                     <motion.div
                                       className="absolute -top-3 -right-3"
-                                      animate={{ 
-                                        rotate: 360, 
+                                      animate={{
+                                        rotate: 360,
                                         scale: [1, 1.3, 1],
                                       }}
-                                      transition={{ 
+                                      transition={{
                                         rotate: { duration: 2, repeat: Infinity, ease: 'linear' },
                                         scale: { duration: 1.5, repeat: Infinity },
                                       }}
@@ -335,11 +334,11 @@ function AdminResultsPageContent() {
                                     </motion.div>
                                     <motion.div
                                       className="absolute -bottom-2 -left-2"
-                                      animate={{ 
-                                        rotate: -360, 
+                                      animate={{
+                                        rotate: -360,
                                         scale: [1, 1.2, 1],
                                       }}
-                                      transition={{ 
+                                      transition={{
                                         rotate: { duration: 3, repeat: Infinity, ease: 'linear' },
                                         scale: { duration: 1, repeat: Infinity },
                                       }}
@@ -350,7 +349,7 @@ function AdminResultsPageContent() {
                                 )}
                               </motion.div>
                             ) : (
-                              <motion.div 
+                              <motion.div
                                 className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center font-bold text-white text-lg"
                                 whileHover={{ scale: 1.2 }}
                               >
@@ -359,7 +358,7 @@ function AdminResultsPageContent() {
                             )}
                             <div className="flex-1">
                               <div className="flex items-center gap-2 mb-2">
-                                <motion.p 
+                                <motion.p
                                   className="font-black text-white text-2xl"
                                   animate={isWinner ? {
                                     scale: [1, 1.05, 1],
@@ -370,7 +369,7 @@ function AdminResultsPageContent() {
                                 </motion.p>
                                 {isTopThree && (
                                   <motion.span
-                                    animate={{ 
+                                    animate={{
                                       scale: [1, 1.3, 1],
                                       rotate: [0, 180, 360],
                                     }}
@@ -382,7 +381,7 @@ function AdminResultsPageContent() {
                                 )}
                                 {isWinner && (
                                   <motion.span
-                                    animate={{ 
+                                    animate={{
                                       scale: [1, 1.2, 1],
                                       x: [0, 5, -5, 5, -5, 0],
                                     }}
@@ -393,7 +392,7 @@ function AdminResultsPageContent() {
                                   </motion.span>
                                 )}
                               </div>
-                              <motion.div 
+                              <motion.div
                                 className="flex items-center gap-2"
                                 animate={isWinner ? {
                                   x: [0, 5, -5, 0],
@@ -408,18 +407,15 @@ function AdminResultsPageContent() {
                             </div>
                           </div>
                           <div className="text-right">
-                            <motion.p 
+                            <motion.p
                               className={`text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r ${config.gradient}`}
                               animate={isWinner ? {
                                 scale: [1, 1.1, 1],
                               } : {}}
                               transition={{ duration: 1.2, repeat: Infinity }}
                             >
-                              {player.score}
+                              {player.score}%
                             </motion.p>
-                            <p className="text-sm text-white/60 font-medium">
-                              {language === 'en' ? 'points' : language === 'he' ? 'נקודות' : 'نقاط'}
-                            </p>
                           </div>
                         </div>
                       </motion.div>
@@ -430,6 +426,20 @@ function AdminResultsPageContent() {
             </motion.div>
           )}
         </AnimatePresence>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 1 }}
+          className="mt-12 text-center"
+        >
+          <button
+            onClick={() => router.push('/admin/dashboard')}
+            className="px-8 py-4 bg-white/10 hover:bg-white/20 text-white rounded-xl font-bold text-lg transition-all border-2 border-white/20 hover:border-white/40 backdrop-blur-md shadow-xl"
+          >
+            {language === 'en' ? 'Back to Dashboard' : language === 'he' ? 'חזרה ללוח הבקרה' : 'العودة إلى لوحة التحكم'}
+          </button>
+        </motion.div>
       </div>
     </div>
   );

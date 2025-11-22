@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, Suspense } from 'react';
+import React, { useEffect, useState, Suspense, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { signInAnonymously } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
@@ -16,7 +16,7 @@ import {
 import { updateDoc, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useLocalization } from '@/lib/localization';
-import LanguageSwitcher from '@/components/LanguageSwitcher';
+
 import PlayerRoundDisplay from '@/components/PlayerRoundDisplay';
 import { Game, Player } from '@/types/game';
 import { motion } from 'framer-motion';
@@ -34,6 +34,20 @@ function PlayerPageContent() {
   const [name, setName] = useState('');
   const [isJoined, setIsJoined] = useState(false);
   const [currentAnswers, setCurrentAnswers] = useState<{ [sentenceId: string]: boolean }>({});
+  const prevRoundRef = useRef<number>(0);
+
+  // Reset answers when round changes
+  useEffect(() => {
+    if (game?.currentRound && game.currentRound !== prevRoundRef.current) {
+      prevRoundRef.current = game.currentRound;
+      // If player exists, try to load saved answers (usually empty for new round)
+      if (player) {
+        setCurrentAnswers(player.answers[game.currentRound] || {});
+      } else {
+        setCurrentAnswers({});
+      }
+    }
+  }, [game?.currentRound, player]);
 
   // Prevent admin from joining as player
   useEffect(() => {
@@ -56,7 +70,25 @@ function PlayerPageContent() {
     };
 
     loadGame();
+    loadGame();
   }, [pin, router]);
+
+  // Auto-rejoin if user is already authenticated and part of the game
+  useEffect(() => {
+    if (game && authUser && !isJoined) {
+      const existingPlayer = game.players[authUser.uid];
+      if (existingPlayer) {
+        setPlayer(existingPlayer);
+        setName(existingPlayer.name);
+        setIsJoined(true);
+
+        // Restore answers for current round
+        if (game.currentRound && existingPlayer.answers[game.currentRound]) {
+          setCurrentAnswers(existingPlayer.answers[game.currentRound]);
+        }
+      }
+    }
+  }, [game, authUser, isJoined]);
 
   useEffect(() => {
     if (!pin || !player) return;
@@ -111,12 +143,12 @@ function PlayerPageContent() {
     if (!game || !player) return;
 
     const currentRound = game.currentRound || 1;
-    
+
     // Round 1 is read-only, no answers allowed
     if (currentRound === 1) {
       return;
     }
-    
+
     setCurrentAnswers((prev) => ({ ...prev, [sentenceId]: isFake }));
 
     await updatePlayerAnswer(game.id, player.id, currentRound, sentenceId, isFake);
@@ -126,7 +158,7 @@ function PlayerPageContent() {
     if (!game || !player || !db) return;
 
     const currentRound = game.currentRound || 1;
-    
+
     // For Round 1, mark player as ready (read-only round)
     if (currentRound === 1) {
       try {
@@ -140,7 +172,7 @@ function PlayerPageContent() {
       }
       return;
     }
-    
+
     // For other rounds, calculate score (handled by admin)
   };
 
@@ -178,9 +210,7 @@ function PlayerPageContent() {
           <div className="absolute inset-0 bg-gradient-to-br from-red-900 via-orange-900 to-red-800" />
         </div>
 
-        <div className="absolute top-4 right-4 z-20">
-          <LanguageSwitcher />
-        </div>
+
 
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
@@ -201,11 +231,11 @@ function PlayerPageContent() {
               {language === 'en' ? 'You have been removed' : language === 'he' ? 'הוסרת מהמשחק' : 'تم إزالتك من اللعبة'}
             </h1>
             <p className="text-xl text-white/90 font-semibold mb-6">
-              {language === 'en' 
-                ? 'The admin has removed you from the game.' 
+              {language === 'en'
+                ? 'The admin has removed you from the game.'
                 : language === 'he'
-                ? 'המנהל הסיר אותך מהמשחק.'
-                : 'قام المدير بإزالتك من اللعبة.'}
+                  ? 'המנהל הסיר אותך מהמשחק.'
+                  : 'قام المدير بإزالتك من اللعبة.'}
             </p>
             <motion.button
               onClick={() => router.push('/')}
@@ -243,9 +273,7 @@ function PlayerPageContent() {
           />
         </div>
 
-        <div className="absolute top-4 right-4 z-20">
-          <LanguageSwitcher />
-        </div>
+
 
         <motion.div
           initial={{ opacity: 0, scale: 0.9, y: 20 }}
@@ -326,9 +354,7 @@ function PlayerPageContent() {
           />
         </div>
 
-        <div className="absolute top-4 right-4 z-20">
-          <LanguageSwitcher />
-        </div>
+
 
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
@@ -391,9 +417,7 @@ function PlayerPageContent() {
           />
         </div>
 
-        <div className="absolute top-4 right-4 z-20">
-          <LanguageSwitcher />
-        </div>
+
 
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
@@ -417,11 +441,11 @@ function PlayerPageContent() {
               {language === 'en' ? 'Reading Complete!' : language === 'he' ? 'סיום קריאה!' : 'اكتمل القراءة!'}
             </h1>
             <p className="text-xl text-white/90 font-semibold mb-6">
-              {language === 'en' 
-                ? 'Waiting for other players to finish...' 
-                : language === 'he' 
-                ? 'ממתין לשחקנים אחרים לסיים...' 
-                : 'في انتظار انتهاء اللاعبين الآخرين...'}
+              {language === 'en'
+                ? 'Waiting for other players to finish...'
+                : language === 'he'
+                  ? 'ממתין לשחקנים אחרים לסיים...'
+                  : 'في انتظار انتهاء اللاعبين الآخرين...'}
             </p>
             <div className="flex justify-center gap-2">
               {[...Array(3)].map((_, i) => (

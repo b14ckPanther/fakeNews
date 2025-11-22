@@ -136,7 +136,7 @@ export default function PlayerRoundDisplay({
                 sentence={sentence}
                 onAnswer={(isFake) => onAnswer(sentence.id, isFake)}
                 selectedAnswer={currentAnswers[sentence.id] !== undefined ? currentAnswers[sentence.id] : null}
-                disabled={currentAnswers[sentence.id] !== undefined}
+                disabled={isRound1}
                 readOnly={isRound1}
               />
             </motion.div>
